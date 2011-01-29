@@ -24,7 +24,8 @@
 
 namespace boost
 {
-    class mutex;
+    ///LA class mutex;
+    class recursive_mutex;
 }
 
 namespace ops
@@ -39,7 +40,8 @@ class Lockable
 
 private:
 
-        boost::mutex* mutex;
+	///LA boost::mutex* mutex;
+	boost::recursive_mutex* mutex;
 
 public:
 
