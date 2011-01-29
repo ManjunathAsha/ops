@@ -142,17 +142,28 @@ namespace ops
                 message = dynamic_cast<OPSMessage*> (archiver.inout(std::string("message"), message));
                 if (message)
                 {
-                    //Put spare bytes in data of message
-                    calculateAndSetSpareBytes(buf, segmentPaddingSize);
+					//Check that we succeded in creating the actual data message
+					if (message->getData()) 
+					{
+						//Put spare bytes in data of message
+						calculateAndSetSpareBytes(buf, segmentPaddingSize);
 
-                    //Add message to a reference handler that will keep the message until it is no longer needed.
-                    messageReferenceHandler.addReservable(message);
-                    message->reserve();
-                    //Send it to Subscribers
-                    notifyNewEvent(message);
-                    //This will delete this message if no one reserved it in the application layer.
-                    if (oldMessage) oldMessage->unreserve();
-                    currentMessageSize = 0;
+						//Add message to a reference handler that will keep the message until it is no longer needed.
+						messageReferenceHandler.addReservable(message);
+						message->reserve();
+						//Send it to Subscribers
+						notifyNewEvent(message);
+						//This will delete this message if no one reserved it in the application layer.
+						if (oldMessage) oldMessage->unreserve();
+						currentMessageSize = 0;
+					}
+					else
+					{
+	                    BasicError err("ReceiveDataHandler", "onNewEvent", "Failed to deserialize message. Check added Factories.");
+		                participant->reportError(&err);
+						delete message;
+	                    message = oldMessage;
+					}
                 }
                 else
                 {
@@ -205,7 +216,7 @@ namespace ops
         int nrOfSpareBytes = currentMessageSize - buf.GetSize() - (nrOfUnserializedSegments * segmentPaddingSize);
 
         if (nrOfSpareBytes > 0)
-        {
+		{
 
             message->getData()->spareBytes.reserve(nrOfSpareBytes);
             message->getData()->spareBytes.resize(nrOfSpareBytes, 0);
