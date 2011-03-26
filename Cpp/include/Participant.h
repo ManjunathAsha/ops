@@ -62,6 +62,7 @@ namespace ops
 		static std::map<std::string, Participant*> instances;
 		static Participant* getInstance(std::string domainID);
 		static Participant* getInstance(std::string domainID, std::string participantID);
+		static Participant* getInstance(std::string domainID, std::string participantID, std::string configFile);
 		static void reportStaticError(Error* err);
 
 		//Create a Topic for subscribing or publishing on ParticipantInfoData
@@ -119,7 +120,7 @@ namespace ops
 	private:
 
 		///Constructor is private instance are aquired through getInstance()
-		Participant(std::string domainID_, std::string participantID_);
+		Participant(std::string domainID_, std::string participantID_, std::string configFile_);
 
 		///The IOService used for this participant, it handles kommunikation and timers for all receivers, subsribers and meber timers of this Participant.
 		IOService* ioService;

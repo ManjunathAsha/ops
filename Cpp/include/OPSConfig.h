@@ -11,6 +11,7 @@ namespace ops
 	{
 	public:
 		static OPSConfig* getConfig();
+		static OPSConfig* getConfig(std::string configFile);
 
 		virtual Domain* getDomain(std::string domainID)
 		{

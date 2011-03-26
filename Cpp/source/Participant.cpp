@@ -45,22 +45,25 @@ namespace ops
 	{
 		return getInstance(domainID_, "DEFAULT_PARTICIPANT");
 	}
+
 	Participant* Participant::getInstance(std::string domainID_, std::string participantID)
 	{
+		return getInstance(domainID_, participantID, "");
+	}
+
+	Participant* Participant::getInstance(std::string domainID_, std::string participantID, std::string configFile)
+	{
 		SafeLock lock(&creationMutex);
-		if(instances.find(participantID) == instances.end())
-		{
+		if (instances.find(participantID) == instances.end()) {
 			try
 			{
-				Participant* newInst = new Participant(domainID_, participantID);
+				Participant* newInst = new Participant(domainID_, participantID, configFile);
 				Domain* tDomain = newInst->getDomain();
 
-				if(tDomain != NULL)
-				{
+				if (tDomain != NULL) {
 					instances[participantID] = newInst;
-				}
-				else
-				{
+				} else {
+					delete newInst;
 					return NULL;
 				}
 			}
@@ -72,11 +75,18 @@ namespace ops
 		return instances[participantID];
 	}
 
-	Participant::Participant(std::string domainID_, std::string participantID_):
+	Participant::Participant(std::string domainID_, std::string participantID_, std::string configFile_):
 		domainID(domainID_), 
 		participantID(participantID_),
 		keepRunning(true),
-		aliveTimeout(1000)
+		aliveTimeout(1000),
+		domain(NULL), 
+		objectFactory(NULL),
+		errorService(NULL), 
+		receiveDataHandlerFactory(NULL),
+		sendDataHandlerFactory(NULL),
+		aliveDeadlineTimer(NULL),
+		threadPool(NULL)
 	{
 		
 		ioService = IOService::create();
@@ -88,12 +98,15 @@ namespace ops
 			throw ex;
 		}
 
-
 		//Should trow?
-		OPSConfig* config = OPSConfig::getConfig();
+		OPSConfig* config;
+		if (configFile_ == "") {
+			config = OPSConfig::getConfig();
+		} else {
+			config = OPSConfig::getConfig(configFile_);
+		}
 		if(!config)
 		{
-			
 			exceptions::CommException ex("No config on rundirectory");
 			throw ex;
 		}
@@ -123,10 +136,8 @@ namespace ops
 		threadPool->addRunnable(this);
 		threadPool->start();
 		//--------------------------------------------
-
-		
-		
 	}
+
 	ops::Topic Participant::createParticipantInfoTopic()
 	{
 		ops::Topic infoTopic("ops.bit.ParticipantInfoTopic", 9494, "ops.ParticipantInfoData", domain->getDomainAddress());
@@ -136,18 +147,17 @@ namespace ops
 		
 		return infoTopic;
 	}
+
 	Participant::~Participant()
 	{
 		SafeLock lock(&serviceMutex);
-		delete partInfoPub;
-		aliveDeadlineTimer->cancel();
-		delete ioService;
-		delete errorService;
-		delete domain;
-		delete receiveDataHandlerFactory;
-		delete sendDataHandlerFactory;
-
-
+		if (partInfoPub) delete partInfoPub;
+		if (aliveDeadlineTimer) aliveDeadlineTimer->cancel();
+		if (ioService) delete ioService;
+		if (errorService) delete errorService;
+		if (domain) delete domain;
+		if (receiveDataHandlerFactory) delete receiveDataHandlerFactory;
+		if (sendDataHandlerFactory) delete sendDataHandlerFactory;
 	}
 
 	void Participant::run()
@@ -155,6 +165,7 @@ namespace ops
 		aliveDeadlineTimer->start(aliveTimeout);
 		ioService->run();	
 	}
+
 	void Participant::reportError(Error* err)
 	{
 		errorService->report(err);
