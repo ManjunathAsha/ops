@@ -49,7 +49,9 @@ namespace ops
 			//udp::resolver::iterator it=resolver.resolve(query);
 			//boost::asio::ip::address addr=(it++)->endpoint().address();
 
-			boost::asio::ip::address ipAddr(boost::asio::ip::address_v4::from_string(localInterface));
+			// Linux needs INADDR_ANY here, for Windows it works with INADDR_ANY or localInterface
+			boost::asio::ip::address ipAddr(boost::asio::ip::address_v4::from_string("0.0.0.0"));
+//			boost::asio::ip::address ipAddr(boost::asio::ip::address_v4::from_string(localInterface));
 
 			localEndpoint = new boost::asio::ip::udp::endpoint(ipAddr, bindPort);
 			

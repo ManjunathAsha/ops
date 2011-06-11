@@ -2,6 +2,7 @@
 #define ops_OPSConstants_h
 
 #include <string>
+#include <limits.h>
 
 namespace ops
 {

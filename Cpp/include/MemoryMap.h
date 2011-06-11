@@ -21,6 +21,8 @@
 #ifndef ops_MemoryMap_h
 #define	ops_MemoryMap_h
 
+#include <memory.h>
+
 namespace ops
 {
 
