@@ -40,7 +40,7 @@ public class Subscriber extends Observable
     private MessageFilterSet messageFilters = new MessageFilterSet();
     private final Object newDataEvent = new Object();
     private OPSObject data;
-    private long deadlineTimeout;
+    private long deadlineTimeout = 0;
     private long lastDeadlineTime;
     private long timeLastDataForTimeBase;
     private long timeBaseMinSeparationTime;
@@ -48,7 +48,8 @@ public class Subscriber extends Observable
     private ReceiveDataHandler receiveDataHandler;
     protected Participant participant;
     private OPSMessage message;
-    private final DeadlineNotifier deadlineNotifier;
+///    private final DeadlineNotifier deadlineNotifier;
+    private DeadlineNotifier deadlineNotifier;
     private volatile long sampleTime1;
     private volatile long sampleTime2;
     private final InProcessTransport inProcessTransport;
@@ -62,9 +63,23 @@ public class Subscriber extends Observable
         inProcessTransport = participant.getInProcessTransport();
     }
 
-    public synchronized void setDeadlineQoS(long timeout)
+    public synchronized void setDeadlineQoS(long timeoutMs)
     {
-        deadlineTimeout = timeout;
+        // A timeout <= 0 disables dead line notification.
+        // If timeout > 0 we enable dead line notification and ensure that we exist in the deadlineNotifier list.
+        if (timeoutMs > 0) {
+            lastDeadlineTime = System.currentTimeMillis();
+            deadlineTimeout = timeoutMs;
+
+            // Potential risk of deadlock? Start is synch add and underlying add is also synched. deadlineNotifier is singleton.
+            if (!deadlineNotifier.contains(this)) {
+                deadlineNotifier.add(this);
+            }
+
+        } else {
+            deadlineNotifier.remove(this);
+            deadlineTimeout = 0;
+        }
     }
 
     public synchronized void setTimeBasedFilterQoS(long minSeparationTime)
@@ -84,8 +99,7 @@ public class Subscriber extends Observable
 
         lastDeadlineTime = System.currentTimeMillis();
         timeLastDataForTimeBase = System.currentTimeMillis();
-        // Potential risk of deadlock? Start is synch add and underlying add is also synched. deadlineNotifier is singleton.
-        deadlineNotifier.add(this);
+        setDeadlineQoS(deadlineTimeout);
         receiveDataHandler.addSubscriber(this);
         inProcessTransport.addSubscriber(this);
 
@@ -202,6 +216,12 @@ public class Subscriber extends Observable
 
     public synchronized void notifyNewOPSMessage(OPSMessage message)
     {
+        //Check that this message is delivered on the same topic as this Subscriber use
+        //This is needed when we allow several topics to use the same port
+        if (!message.getTopicName().equals(topic.getName()))
+        {
+            return;
+        }
         if (messageFilters.applyFilter(message))
         {
             this.message = message;

@@ -23,13 +23,15 @@ public class DeadlineNotifier extends Thread
         {
             theInstance = new DeadlineNotifier();
             theInstance.start();
+            //System.out.println("Created DeadlineNotifier()");
         }
         return theInstance;
     }
-    Vector<Subscriber> subscribers = new Vector<Subscriber>();
+
+    private Vector<Subscriber> subscribers = new Vector<Subscriber>();
     private volatile boolean keepRunning;
 
-    public DeadlineNotifier()
+    private DeadlineNotifier()
     {
         setName("DeadlineNotifierThread");
     }
@@ -40,15 +42,24 @@ public class DeadlineNotifier extends Thread
         boolean result = subscribers.remove(o);
         if (subscribers.size() == 0)
         {
-            stopRunning();
-            theInstance = null;
+            ///We don't stop the thread for now since that results in deadlines stop working
+            ///TODO fix the thread start/stop handling
+            ///stopRunning();
+            ///theInstance = null;
         }
         return result;
     }
 
     public synchronized boolean add(Subscriber e)
     {
-        return subscribers.add(e);
+        boolean result = subscribers.add(e);
+        //System.out.println("Deadline.add() for topic: " + e.getTopic().getName() + ". Num subs: " + subscribers.size());
+        return result;
+    }
+
+    public synchronized boolean contains(Subscriber o)
+    {
+        return subscribers.contains(o);
     }
 
     public void stopRunning()
