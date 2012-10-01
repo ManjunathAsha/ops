@@ -38,22 +38,40 @@ import java.nio.ByteBuffer;
  */
 public class MulticastReceiver implements Receiver
 {
-    private MulticastSocket multicastSocket;
+    private MulticastSocket multicastSocket = null;
     int port;
     InetAddress ipAddress;
+    String localInterface;
+    int receiveBufferSize;
     private Event newBytesEvent = new Event();
+    boolean opened = false;
 
     byte[] tempBytes = new byte[StaticManager.MAX_SIZE];
     /** Creates a new instance of MulticastReceiver */
     public MulticastReceiver(String ip, int port, String localInterface, int receiveBufferSize) throws IOException
     {
-        
-            ipAddress = InetAddress.getByName(ip);
-            SocketAddress mcSocketAddress = new InetSocketAddress(ipAddress, port);
-            this.port = port;
-            //multicastSocket = new MulticastSocket();
-            multicastSocket = MulticastSocketCreator.getMulticastSocket(port);
+        ipAddress = InetAddress.getByName(ip);
+        this.port = port;
+        this.localInterface = localInterface;
+        this.receiveBufferSize = receiveBufferSize;
+        Open();
+    }
 
+    public MulticastReceiver(String ip, int port) throws IOException
+    {
+        this(ip, port, "0.0.0.0", 0);
+    }
+    
+    public final void Open() throws IOException
+    {
+        if (!opened) {
+            SocketAddress mcSocketAddress = new InetSocketAddress(ipAddress, port);
+            ///LA We can't use the MulticastSocketCreator() since it will return the same socket
+            /// even if they are on different domains.
+            /// And we don't need it, since the ReceiveDataHandler() handles the case when
+            /// several subscribers use the same port
+            ///multicastSocket = MulticastSocketCreator.getMulticastSocket(port);
+            multicastSocket = new MulticastSocket(port);
 
             if(!localInterface.equals("0.0.0.0"))
             {//For some reason this method throws an error if we try to set outgoing interface to ANY.
@@ -70,17 +88,23 @@ public class MulticastReceiver implements Receiver
 //            {
 //                //Logger.getLogger(MulticastReceiver.class.getName()).log(Level.SEVERE, null, ex);
 //            }
-            
+
             //multicastSocket.setReuseAddress(true);
             //multicastSocket.bind(new InetSocketAddress(port));
             multicastSocket.setTimeToLive(1);
             multicastSocket.joinGroup(mcSocketAddress, NetworkInterface.getByInetAddress(InetAddress.getByName(localInterface)));
-       
+            opened = true;
+        }
     }
-    public MulticastReceiver(String ip, int port) throws IOException
+
+    public void Close()
     {
-        this(ip, port, "0.0.0.0", 0);
+        if (opened && (multicastSocket != null)) {
+            multicastSocket.close();
+        }
+        opened = false;
     }
+
 //    public boolean receive(byte[] b, int offset)
 //    {
 //        DatagramPacket p = new DatagramPacket(b, offset, StaticManager.MAX_SIZE);

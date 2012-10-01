@@ -20,12 +20,18 @@
 
 package ops;
 
+import java.io.IOException;
+
 /**
  *
  * @author Anton Gravestam
  */
 public interface Receiver
 {
+
+    void Open() throws IOException;
+
+    void Close();
 
     //public boolean receive(byte[] bytes, int offset);
     public boolean receive(byte[] headerBytes, byte[] bytes, int offset);

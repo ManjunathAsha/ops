@@ -54,6 +54,16 @@ public class TcpClient implements Receiver
         sizePackBuffer = ByteBuffer.wrap(sizePackBytes).order(ByteOrder.LITTLE_ENDIAN);
     }
 
+    public void Open() throws IOException
+    {
+        throw new IOException("Not Implemented Yet");
+    }
+
+    public void Close()
+    {
+    
+    }
+
     public boolean receive(byte[] headerBytes, byte[] bytes, int offset)
     {
         try

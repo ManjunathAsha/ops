@@ -78,6 +78,11 @@ public class ReceiveDataHandler
         if (!hasSubscribers)
         {
             addNewBytesEventListener();
+            try {
+                receiver.Open();
+            } catch (IOException ex) {
+                Logger.getLogger(ReceiveDataHandler.class.getName()).log(Level.SEVERE, null, ex);
+            }
             hasSubscribers = true;
             setupTransportThread();
         }
@@ -90,6 +95,7 @@ public class ReceiveDataHandler
         if (subscribers.size() == 0)
         {
             receiver.getNewBytesEvent().deleteObserver(bytesListener);
+            receiver.Close();
             hasSubscribers = false;
         }
 
