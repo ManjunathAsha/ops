@@ -43,6 +43,9 @@ public class Participant
     private SendDataHandlerFactory sendDataHandlerFactory = new SendDataHandlerFactory();
     private InProcessTransport inProcessTransport = new InProcessTransport();
 
+    ///LA Added
+    private OPSConfig config = null;
+
     /**
      * Method for retreiving the default Participant instance for the @param domainID
      * @param domainID
@@ -92,7 +95,7 @@ public class Participant
         this.participantID = participantID;
         try
         {
-            OPSConfig config;
+            ///LA made class member OPSConfig config;
             if (configFile == null)
             {
                 config = OPSConfig.getConfig();
@@ -124,6 +127,16 @@ public class Participant
 
         inProcessTransport.start();
 
+    }
+
+    ///LA Added
+    /**
+     * Return the OPSConfig object used (if any).
+     * Note that null can be returned if Participant is created from a Domain object
+     */
+    public OPSConfig getConfig()
+    {
+        return config;
     }
 
     /**
