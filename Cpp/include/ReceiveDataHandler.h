@@ -55,6 +55,11 @@ namespace ops
 
 		void stop();
 
+		// We need to act on these localy
+		// overridden from Notifier<OPSMessage*>
+		void addListener(Listener<OPSMessage*>* listener);
+		void removeListener(Listener<OPSMessage*>* listener);
+
 ///LA
 		int numReservedMessages()
 		{

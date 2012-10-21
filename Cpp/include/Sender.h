@@ -44,6 +44,8 @@ namespace ops
         virtual int receiveReply(char* buf, int size) = 0;
         virtual int getPort() = 0;
         virtual std::string getAddress() = 0;
+		virtual void open() = 0;
+		virtual void close() = 0;
 
         static Sender* create(std::string localInterface = "0.0.0.0", int ttl = 1, __int64 outSocketBufferSize = 16000000);
         static Sender* createUDPSender(std::string localInterface = "0.0.0.0", int ttl = 1, __int64 outSocketBufferSize = 16000000);

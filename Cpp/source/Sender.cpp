@@ -38,15 +38,22 @@ namespace ops
 
     Sender* Sender::createTCPServer(std::string ip, int port, IOService* ioService)
     {
-        static std::map<int, TCPServer*> tcpSenderInstances;
+		///LA Can't have a static storage of TCPServers with only port as key,
+		/// this will not work if the same port is used on two different IP addresses.
+		/// Besides, there is already a store of TCPSendDataHandlers, 
+		/// so when we come here we should always create a new TCPServer
 
-        TCPServer* newInstance = NULL;
-        if (tcpSenderInstances.find(port) == tcpSenderInstances.end())
-        {
-            newInstance = new TCPServer(ip, port, ioService);
-            tcpSenderInstances[port] = newInstance;
-        }
-        return tcpSenderInstances[port];
+        //static std::map<int, TCPServer*> tcpSenderInstances;
+
+        //TCPServer* newInstance = NULL;
+        //if (tcpSenderInstances.find(port) == tcpSenderInstances.end())
+        //{
+        //    newInstance = new TCPServer(ip, port, ioService);
+        //    tcpSenderInstances[port] = newInstance;
+        //}
+        //return tcpSenderInstances[port];
+
+		return new TCPServer(ip, port, ioService);
     }
 
 

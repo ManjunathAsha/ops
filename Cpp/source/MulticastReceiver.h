@@ -40,7 +40,7 @@ namespace ops
 	{
 	public:
 		MulticastReceiver(std::string mcAddress, int bindPort, IOService* ioServ, std::string localInterface = "0.0.0.0", __int64 inSocketBufferSizent = 16000000): 
-		  max_length(65535),
+		  max_length(65535), m_receiveCounter(0),
 		  cancelled(false)
 		{
 			boost::asio::io_service* ioService = ((BoostIOServiceImpl*)ioServ)->boostIOService;//((BoostIOServiceImpl*)Participant::getIOService())->boostIOService;
@@ -59,8 +59,6 @@ namespace ops
 
 			sock = new boost::asio::ip::udp::socket(*ioService);
 
-
-			
 			sock->open(localEndpoint->protocol());
 				
 			if(inSocketBufferSizent > 0)
@@ -78,11 +76,8 @@ namespace ops
 			//boost::asio::socket_base::receive_buffer_size option(inSocketBufferSizent);
 			//sock->set_option(option);
 			
-
-
 			sock->set_option(boost::asio::ip::udp::socket::reuse_address(true));
 			sock->bind(*localEndpoint);
-
 
 			// Join the multicast group.
 ///LA
@@ -96,24 +91,23 @@ namespace ops
 
 			ipaddress = mcAddress;
 			port = sock->local_endpoint().port();
-
-			
-
 		}
 
 		void asynchWait(char* bytes, int size)
 		{
 			data  = bytes;
 			max_length = size;
+			InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
 			sock->async_receive(
 				boost::asio::buffer(data, max_length), 
 				boost::bind(&MulticastReceiver::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-
 		}
 
 		void handle_receive_from(const boost::system::error_code& error,
 			size_t nrBytesReceived)
 		{
+			InterlockedDecrement(&m_receiveCounter);	// keep track of outstanding requests
+
 			if(cancelled)
 			{
 				return;
@@ -122,28 +116,20 @@ namespace ops
 			{
 				//printf("Data receivedm in multicast receiver\n");
 				handleReadOK(data, nrBytesReceived);
-				//notifyNewEvent(data);
-			
 			}
 			else
 			{
 				handleReadError(error);
 			}
-			
-			
 		}
+
 		void handleReadOK(char* bytes_, int size)
 		{
 			notifyNewEvent(BytesSizePair(data, size));
-
-			/*sock->async_receive(
-				boost::asio::buffer(data, max_length), 
-				boost::bind(&MulticastReceiver::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));*/
-
 		}
+
 		void handleReadError(const boost::system::error_code& error)
 		{
-			
 			if(error.value() == BREAK_COMM_ERROR_CODE)
 			{
 				//Communcation has been canceled from stop, do not scedule new receive
@@ -153,19 +139,27 @@ namespace ops
 			//printf("___________handleReadError__________\n");
 			Participant::reportStaticError(&ops::BasicError("MulticastReceiver", "handleReadError", "Error"));
 			
+			InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
 			sock->async_receive(
 				boost::asio::buffer(data, max_length), 
 				boost::bind(&MulticastReceiver::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-
 		}
-
 
 		~MulticastReceiver()
 		{
+			// Make sure socket is closed
+			stop();
+
+			/// We must handle asynchronous callbacks that haven't finished yet.
+			/// This approach works, but the recommended boost way is to use a shared pointer to the instance object
+			/// between the "normal" code and the callbacks, so the callbacks can check if the object exists.
+			while (m_receiveCounter) 
+				Sleep(1);
+
 			delete sock;
 			delete localEndpoint;
-			//delete ioService;
 		}
+
 		int receive(char* buf, int size)
 		{
 			try
@@ -178,12 +172,13 @@ namespace ops
 				Participant::reportStaticError(&ops::BasicError("MulticastReceiver", "receive", "Exception in MulticastReceiver::receive()"));
 				return -1;
 			}
-
 		}
+
 		int available()
 		{
 			return sock->available();
 		}
+
 		bool sendReply(char* buf, int size)
 		{
 			try
@@ -196,13 +191,19 @@ namespace ops
 				return false;
 			}
 		}
+
 		int getPort()
 		{
 			return port;
 		}
+
 		std::string getAddress()
 		{
 			return ipaddress;
+		}
+
+		void start()
+		{
 		}
 
 		///Override from Receiver
@@ -211,9 +212,7 @@ namespace ops
 			boost::system::error_code error(BREAK_COMM_ERROR_CODE, boost::system::generic_category);
 			cancelled = true;
 			sock->cancel(error);
-			
 		}
-
 		
 	private:
 		int port;
@@ -223,13 +222,14 @@ namespace ops
 		boost::asio::ip::udp::endpoint lastEndpoint;
 		boost::asio::io_service* ioService;
 
-		int max_length; //enum { max_length = 65535 };
-		char* data;//[max_length];
+		int max_length;
+		char* data;
 
 		static const int BREAK_COMM_ERROR_CODE = 345676;
 		bool cancelled;
 
-
+		// Counter to keep track of our outstanding requests, that will result in callbacks to us
+		volatile LONG m_receiveCounter;
 	};
 }
 #endif

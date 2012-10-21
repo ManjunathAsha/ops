@@ -56,7 +56,21 @@ namespace ops
         delete receiver;
     }
 
+	// Overridden from Notifier<OPSMessage*>
+	void ReceiveDataHandler::addListener(Listener<OPSMessage*>* listener)
+    {
+        SafeLock lock(&messageLock);
+		Notifier<OPSMessage*>::addListener(listener);
+		if (getNrOfListeners() == 1) receiver->start();
+	}
 
+	// Overridden from Notifier<OPSMessage*>
+    void ReceiveDataHandler::removeListener(Listener<OPSMessage*>* listener)
+    {
+        SafeLock lock(&messageLock);
+		Notifier<OPSMessage*>::removeListener(listener);
+		if (getNrOfListeners() == 0) receiver->stop();
+	}
 
     ///Override from Listener
     ///Called whenever the receiver has new data.
@@ -192,7 +206,7 @@ namespace ops
     void ReceiveDataHandler::stop()
     {
         receiver->removeListener(this);
-        receiver->stop();
+///LA ///TTTTT        receiver->stop();
     }
 
     bool ReceiveDataHandler::aquireMessageLock()

@@ -61,13 +61,26 @@ namespace ops
         message.setPublisherName(name);
         message.setTopicName(topic.getName());
         message.setDataOwner(false);
+		
+		start();
     }
 
     Publisher::~Publisher()
     {
+		stop();
 		participant->releaseSendDataHandler(topic);
         //delete bytes;
     }
+
+	void Publisher::start()
+	{
+		sendDataHandler->addPublisher(this);
+	}
+
+	void Publisher::stop()
+	{
+		sendDataHandler->removePublisher(this);
+	}
 
     Topic Publisher::getTopic()
     {

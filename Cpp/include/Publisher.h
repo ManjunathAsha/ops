@@ -42,6 +42,9 @@ public:
 	Publisher(Topic t);
     virtual ~Publisher();
 
+	void start();
+	void stop();
+
     Topic getTopic();
 
     void setName(std::string name);

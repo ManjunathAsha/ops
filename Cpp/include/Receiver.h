@@ -40,6 +40,7 @@ namespace ops
 		
 		//void setReceiveBuffer(char* bytes, int bufSize);
 		virtual void asynchWait(char* bytes, int size) = 0;
+		virtual void start() = 0;
 		virtual void stop() = 0;
 
 		

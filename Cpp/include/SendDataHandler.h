@@ -21,6 +21,7 @@
 #define	ops_SendDataHandler_h
 
 #include "Topic.h"
+
 namespace ops
 {
 	//Interface
@@ -29,6 +30,8 @@ namespace ops
 	public:
 		virtual bool sendData(char* buf, int bufSize, Topic& topic) = 0;
 
+		virtual void addPublisher(void* client) = 0;
+		virtual void removePublisher(void* client) = 0;
 	};
 }
 

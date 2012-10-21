@@ -46,6 +46,14 @@ namespace ops
             sender = Sender::createUDPSender();
         }
 
+		void addPublisher(void* client) 
+		{
+		}
+		
+		void removePublisher(void* client) 
+		{
+		}
+
         bool sendData(char* buf, int bufSize, Topic& topic)
         {
             SafeLock lock(&mutex);

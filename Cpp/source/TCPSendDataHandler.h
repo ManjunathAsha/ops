@@ -41,6 +41,33 @@ namespace ops
             sender = Sender::createTCPServer(topic.getDomainAddress(), topic.getPort(), ioService);
         }
 
+		void addPublisher(void* client) 
+		{
+            SafeLock lock(&mutex);
+			// Check that it isn't already in the list
+			for (unsigned int i = 0; i < publishers.size(); i++) {
+				if (publishers[i] == client) return;
+			}
+			// Save client in the list
+			publishers.push_back(client);
+			// For the first client, we open the sender
+			if (publishers.size() == 1) sender->open();
+		}
+
+		void removePublisher(void* client)
+		{
+            SafeLock lock(&mutex);
+			// Remove it from the list
+			std::vector<void*>::iterator Iter;
+			for (Iter = publishers.begin(); Iter != publishers.end(); Iter++) {
+				if (*Iter == client) {
+					publishers.erase(Iter);
+					break;
+				}
+			}
+			if (publishers.size() == 0) sender->close();
+		}
+
         bool sendData(char* buf, int bufSize, Topic& topic)
         {
             SafeLock lock(&mutex);
@@ -65,7 +92,7 @@ namespace ops
         Sender* sender;
         Lockable mutex;
 
-
+		std::vector<void*> publishers;
 
     };
 

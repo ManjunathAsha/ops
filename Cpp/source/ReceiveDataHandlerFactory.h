@@ -12,7 +12,7 @@ namespace ops
     {
     private:
         ///Receiver used to get a unigue port/id for this participant on the current machine
-        Receiver* udpRec;
+///not used        Receiver* udpRec;
         ReceiveDataHandler* udpReceiveDataHandler;
 
         ///By Singelton, one ReceiveDataHandler per Topic (name) on this Participant

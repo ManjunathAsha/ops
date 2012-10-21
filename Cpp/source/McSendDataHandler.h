@@ -41,6 +41,14 @@ namespace ops
             sender = Sender::create(localInterface, ttl, topic.getOutSocketBufferSize());
         }
 
+		void addPublisher(void* client) 
+		{
+		}
+		
+		void removePublisher(void* client) 
+		{
+		}
+
         bool sendData(char* buf, int bufSize, Topic& topic)
         {
 

@@ -48,20 +48,23 @@ namespace ops
 	class TCPServer : public Sender
     {
     public:
-		TCPServer(std::string serverIP, int serverPort, IOService* ioServ) : connected(false), canceled(false)
+		TCPServer(std::string serverIP, int serverPort, IOService* ioServ) : acceptor(NULL), sock(NULL), connected(false), canceled(false)
 		{
 			ioService = ((BoostIOServiceImpl*)ioServ)->boostIOService;//((BoostIOServiceImpl*)Participant::getIOService())->boostIOService;
 			//boost::asio::ip::address ipAddr(boost::asio::ip::address_v4::from_string(serverIP));
 			endpoint = new boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), serverPort);
-			acceptor = new boost::asio::ip::tcp::acceptor(*ioService, *endpoint);
 			sock = new boost::asio::ip::tcp::socket(*ioService);
-
-			
-
-			acceptor->async_accept(*sock, boost::bind(&TCPServer::handleAccept, this, boost::asio::placeholders::error));
-
 		}
 		
+		void open()
+		{
+			canceled = false;
+			if (acceptor) delete acceptor;
+			// This constructor opens, binds and listens to the given endpoint.
+			acceptor = new boost::asio::ip::tcp::acceptor(*ioService, *endpoint);
+			acceptor->async_accept(*sock, boost::bind(&TCPServer::handleAccept, this, boost::asio::placeholders::error));
+		}
+
 		///Sends buf to any Receiver connected to this Sender, ip and port are discarded and can be left blank.
         virtual bool sendTo(char* buf, int size, const std::string& ip, int port)
 		{
@@ -82,7 +85,6 @@ namespace ops
 				catch(std::exception& e)
 				{
 					std::cout << "Socket closed, exception in TCPServer::sendTo():" << e.what() << std::endl;
-					connected = false;
 					connectedSockets[i]->close();
 
 					std::vector<boost::asio::ip::tcp::socket*>::iterator it;
@@ -91,12 +93,10 @@ namespace ops
 					delete connectedSockets[i];
 					connectedSockets.erase(it);
 					
-
+					connected = (connectedSockets.size() > 0);
 				}
 			}
 			return true;
-			
-			//return false;
 		}
 		virtual int receiveReply(char* buf, int size)
 		{
@@ -113,15 +113,26 @@ namespace ops
 
         virtual ~TCPServer()
         {
+			close();
+			delete acceptor;
+			delete sock;
+			delete endpoint;
+		}
+
+		void close()
+		{
 			canceled = true;
-			sock->close();
+			acceptor->close();
+			//sock->close();
 			for(int i = connectedSockets.size() - 1; i >= 0 ; i--)
 			{
 				connectedSockets[i]->close();
 				delete connectedSockets[i];
 			}
 			connectedSockets.clear();
-        }
+			connected = false;
+		}
+
     private:
 		void handleAccept(const boost::system::error_code& error)
 		{
@@ -139,7 +150,7 @@ namespace ops
 					//std::cout << "Socket buffer size could not be set" << std::endl;
 					Participant::reportStaticError(&ops::BasicError("TCPServer", "TCPServer", "Socket buffer size could not be set"));
 				}
-				std::cout << "accept ok" << std::endl;
+//				std::cout << "accept ok" << std::endl;
 				connectedSockets.push_back(sock);
 				sock = new boost::asio::ip::tcp::socket(*ioService);
 				acceptor->async_accept(*sock, boost::bind(&TCPServer::handleAccept, this, boost::asio::placeholders::error));
@@ -147,7 +158,7 @@ namespace ops
 			}
 			else
 			{
-				std::cout << "accept failed" << std::endl;
+//				std::cout << "accept failed" << std::endl;
 				acceptor->async_accept(*sock, boost::bind(&TCPServer::handleAccept, this, boost::asio::placeholders::error));
 			}
 		}
@@ -169,5 +180,5 @@ namespace ops
 
 
 
-#endif	/* _TRANSPORT_H */
+#endif	/* ops_TCPServerH */
 

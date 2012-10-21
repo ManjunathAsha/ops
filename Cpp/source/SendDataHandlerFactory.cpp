@@ -1,4 +1,6 @@
 
+#include <strstream>
+
 #include "OPSTypeDefs.h"
 #include "SendDataHandlerFactory.h"
 #include "SendDataHandler.h"
@@ -20,6 +22,13 @@ namespace ops
 	
 	SendDataHandler* SendDataHandlerFactory::getSendDataHandler(Topic& top, Participant* participant)
 	{
+		// We need to store SendDataHandlers with more than just the name as key.
+		// Since topics can use the same port, we need to return the same SendDataHandler.
+		// Make a key with the transport info that uniquely defines the receiver.
+		std::ostrstream myStream;
+		myStream << top.getPort() << std::ends;
+		std::string key = top.getTransport() + "::" + top.getDomainAddress() + "::" + myStream.str();
+
 		SafeLock lock(&mutex);
 
 		if(top.getTransport() == Topic::TRANSPORT_MC)
@@ -42,15 +51,15 @@ namespace ops
 		}
 		else if(top.getTransport() == Topic::TRANSPORT_TCP)
 		{
-			if(tcpSendDataHandlers.find(top.getName()) == tcpSendDataHandlers.end() )
+			if(tcpSendDataHandlers.find(key) == tcpSendDataHandlers.end() )
 			{
-				SendDataHandler* newSendDataHanler = new TCPSendDataHandler(top, participant->getIOService());
-				tcpSendDataHandlers[top.getName()] = newSendDataHanler;
-				return newSendDataHanler;
+				SendDataHandler* newSendDataHandler = new TCPSendDataHandler(top, participant->getIOService());
+				tcpSendDataHandlers[key] = newSendDataHandler;
+				return newSendDataHandler;
 			}
 			else
 			{
-				return tcpSendDataHandlers[top.getName()];
+				return tcpSendDataHandlers[key];
 			}			
 
 		}

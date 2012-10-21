@@ -210,6 +210,10 @@ namespace ops
 
         ///Override from Receiver
 
+		void start()
+		{
+		}
+
         void stop()
         {
             boost::system::error_code error(BREAK_COMM_ERROR_CODE, boost::system::generic_category);
