@@ -28,11 +28,11 @@
 namespace ops
 {
 
-    class OPSMessage : public OPSObject
+    class OPSMessage : public OPSObject, public Reservable
     {
     public:
 
-        OPSMessage() :
+        OPSMessage() : Reservable(),
         messageType(0),
         endianness(0),
         publisherPriority(),

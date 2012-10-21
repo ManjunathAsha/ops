@@ -22,7 +22,7 @@
 
 namespace ops
 {
-	OPSObject::OPSObject() : Reservable(), Serializable()
+	OPSObject::OPSObject() : /*Reservable(),*/ Serializable()
     {
         key = "k";
 		typesString = "";

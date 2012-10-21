@@ -31,7 +31,8 @@ namespace ops
 {
     
     ///Base class for object that can be serialized with OPSArchivers
-	class OPSObject :  public Reservable, public Serializable
+	///LA Moved inheritance of Reservable to OPSMessage
+	class OPSObject :  /*public Reservable,*/ public Serializable
     {
         
         friend class ByteBuffer;
