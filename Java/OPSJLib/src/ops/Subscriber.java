@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Observable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import ops.protocol.OPSMessage;
 import ops.transport.inprocess.InProcessTransport;
 
@@ -92,22 +94,29 @@ public class Subscriber extends Observable
         return timeBaseMinSeparationTime;
     }
 
-
-
-    public synchronized void start()
+    /// This method can't be synchronized, since it calls receiveDataHandler.addSubscriber()
+    /// which is synchronized with the data that is received, which calls our method
+    /// notifyNewOPSMessage() which is synchronized, so it could lead to deadlock.
+    /// Then this method don't actualy need to be synchronized, since the sensitive data
+    /// is protected in the methods called.
+    public void start()
     {
-
         lastDeadlineTime = System.currentTimeMillis();
         timeLastDataForTimeBase = System.currentTimeMillis();
         setDeadlineQoS(deadlineTimeout);
         receiveDataHandler.addSubscriber(this);
         inProcessTransport.addSubscriber(this);
-
     }
 
-    public synchronized boolean stop()
+    /// This method can't be synchronized, since it calls receiveDataHandler.removeSubscriber()
+    /// which is synchronized with the data that is received, which calls our method
+    /// notifyNewOPSMessage() which is synchronized, so it could lead to deadlock.
+    /// Then this method don't actualy need to be synchronized, since the sensitive data
+    /// is protected in the methods called.
+    public boolean stop()
     {
         deadlineNotifier.remove(this);
+        inProcessTransport.removeSubscriber(this);
         return receiveDataHandler.removeSubscriber(this);
     }
 
