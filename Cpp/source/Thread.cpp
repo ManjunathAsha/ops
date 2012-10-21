@@ -22,13 +22,18 @@
 #include <boost/thread.hpp>
 namespace ops
 {
-	Thread::Thread() : started(false)
+	Thread::Thread() : started(false), thread(NULL), threadRunning(false)
     {
 	}
     
     Thread::~Thread()
     {
-		thread->interrupt();
+		if (thread) {
+			thread->interrupt();
+			// Wait for thread to exit before we delete it
+			thread->join();
+			delete thread;
+		}
 	}
     
     int Thread::start()
@@ -43,7 +48,7 @@ namespace ops
 
 	bool Thread::join()
 	{
-		thread->join();
+		if (thread) thread->join();
 		return true;
     }
    /* 
@@ -52,9 +57,9 @@ namespace ops
 		return thread;
     }*/
     
-    void  Thread::stop()
+    void Thread::stop()
     {
-		thread->interrupt();
+		if (thread) thread->interrupt();
     }
     
     /*static */ void  Thread::EntryPoint(void* pthis)
