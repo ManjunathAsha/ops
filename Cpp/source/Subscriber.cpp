@@ -81,6 +81,7 @@ namespace ops
         receiveDataHandler->aquireMessageLock();
         receiveDataHandler->removeListener(this);
         receiveDataHandler->releaseMessageLock();
+		receiveDataHandler = NULL;
         participant->releaseReceiveDataHandler(topic);
         deadlineTimer->removeListener(this);
         deadlineTimer->cancel();
@@ -213,10 +214,12 @@ namespace ops
 
     void Subscriber::setDeadlineQoS(__int64 millis)
     {
-        deadlineTimeout = millis;
-        //cancelDeadlineTimeouts();
-        //registerForDeadlineTimeouts();
-        //transport->setReceiveTimeout(millis);
+		if (millis == 0) {
+		    deadlineTimeout = TimeHelper::infinite;
+		} else {
+	        deadlineTimeout = millis;
+		}
+		cancelDeadlineTimeouts();	// Restart with new timeout
     }
 
     __int64 Subscriber::getDeadlineQoS()
