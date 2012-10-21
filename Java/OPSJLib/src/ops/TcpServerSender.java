@@ -25,6 +25,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,19 +37,51 @@ public class TcpServerSender implements Sender, Runnable
 {
     private final String serverIp;
     private final int serverPort;
-    private volatile boolean run;
-    private final ServerSocket server;
+    private final int sendBufferSize;
+    private ServerSocket server = null;
     private TcpSenderList tcpSenderList;
+    private volatile boolean listening = false;
+    private Semaphore sem = new Semaphore(0);
 
-    public TcpServerSender(String serverIp, int serverPort) throws IOException
+    public TcpServerSender(String serverIp, int serverPort, int sendBufferSize) throws IOException
     {
         this.serverIp = serverIp;
         this.serverPort = serverPort;
-        server = new ServerSocket(serverPort, 0, InetAddress.getByName(serverIp));
+        this.sendBufferSize = sendBufferSize;
+//moved below        server = new ServerSocket(serverPort, 0, InetAddress.getByName(serverIp));
         tcpSenderList = new TcpSenderList();
         new Thread(this).start();
+        open();
     }
 
+    public final void open()
+    {
+        if (!listening)
+        {
+            listening = true;       // Set flag before we signal the thread
+            sem.release();          // Signal semaphore so the thread is released
+        }
+    }
+
+    public void close()
+    {
+        if (listening)
+        {
+            sem.drainPermits();     // Clear semaphore so thread will hang on it
+            listening = false;      // clear flag before we call stop()
+
+            try {
+                // Stop listening. The accept() call in Run() will exit
+                // and the thread will wait on the event again
+                if (server != null) server.close();
+            } catch (IOException ex) {
+                Logger.getLogger(TcpServerSender.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            // Clear all connections (sockets) to subscribers
+            tcpSenderList.emptyList();
+        }
+    }
 
     public boolean sendTo(byte[] bytes, String ip, int port)
     {
@@ -65,7 +98,6 @@ public class TcpServerSender implements Sender, Runnable
             Logger.getLogger(TcpServerSender.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
-
     }
 
     public boolean sendTo(byte[] bytes, int offset, int size, InetAddress ipAddress, int port)
@@ -75,23 +107,31 @@ public class TcpServerSender implements Sender, Runnable
 
     public void run()
     {
-        run = true;
-        while(run)
+        while(true)
         {
-            try
-            {
-                Socket socket = server.accept();
-                tcpSenderList.add(socket);
-
-
-            } catch (IOException ex)
-            {
-                Logger.getLogger(TcpServerSender.class.getName()).log(Level.SEVERE, null, ex);
+            try {
+                /// Wait for semaphore to be set
+                sem.acquire();
                 
+                // this.tcpListener.Start();
+                server = new ServerSocket(this.serverPort, 0, InetAddress.getByName(this.serverIp));
+                
+                while (listening) {
+                    try {
+                        Socket socket = server.accept();
+                        if (sendBufferSize > 0) socket.setSendBufferSize(sendBufferSize);
+                        tcpSenderList.add(socket);
+                    } catch (IOException ex) {
+                        if (listening) Logger.getLogger(TcpServerSender.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                server.close();
+            } catch (IOException ex) {
+                Logger.getLogger(TcpServerSender.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(TcpServerSender.class.getName()).log(Level.SEVERE, null, ex);
             }
-
         }
-        
     }
 
 }

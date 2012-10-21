@@ -34,9 +34,20 @@ import java.util.logging.Logger;
  */
 public class TcpSenderList implements Sender
 {
-
     Vector<Socket> senders = new Vector<Socket>();
     private static final String sizeHeader = "opsp_tcp_size_info";
+
+    public synchronized void emptyList()
+    {
+        for (Socket s : senders)
+        {
+            try {
+                s.close();
+            } catch (IOException ex) {
+            }
+        }
+        senders.clear();
+    }
 
     public synchronized boolean remove(Socket o)
     {
@@ -50,37 +61,39 @@ public class TcpSenderList implements Sender
 
     public synchronized boolean sendTo(byte[] bytes, String ip, int port)
     {
-
         return this.sendTo(bytes, 0, bytes.length, ip, port);
-
     }
 
     public synchronized boolean sendTo(byte[] bytes, int offset, int size, String ip, int port)
     {
+        Vector<Socket> failedSenders = new Vector<Socket>();
+
         for (Socket s : senders)
         {
-            if (s.getInetAddress().getHostAddress().equals(ip) && s.getPort() == port)
+            try
             {
-                try
-                {
-                    //First, prepare and send a package of fixed length 22 with information about the size of the data package
-                    
-                    s.getOutputStream().write(sizeHeader.getBytes());
-                    ByteBuffer bb = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(size);
-                    s.getOutputStream().write(bb.array());
+                //First, prepare and send a package of fixed length 22 with information about the size of the data package
+                s.getOutputStream().write(sizeHeader.getBytes());
+                ByteBuffer bb = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(size);
+                s.getOutputStream().write(bb.array());
 
-                    //Send the actual data
-                    s.getOutputStream().write(bytes, offset, size);
-
-                } catch (IOException ex)
-                {
-                    Logger.getLogger(TcpSenderList.class.getName()).log(Level.INFO, null, ex);
-                    remove(s);
-                }
-                
+                //Send the actual data
+                s.getOutputStream().write(bytes, offset, size);
+            } catch (IOException ex)
+            {
+                Logger.getLogger(TcpSenderList.class.getName()).log(Level.INFO, null, ex);
+                failedSenders.add(s);
             }
-
         }
+        
+        for (Socket s : failedSenders) {
+            try {
+                s.close();
+            } catch (IOException ex) {
+            }
+            remove(s);
+        }
+        
         return true;
     }
 
@@ -89,16 +102,16 @@ public class TcpSenderList implements Sender
         return this.sendTo(bytes, offset, size, ipAddress.getHostAddress(), port);
     }
 
-    public synchronized void remove(String ip, int port) throws IOException
-    {
-        for (int i = 0; i < senders.size(); i++)
-        {
-            if (senders.get(i).getInetAddress().getHostAddress().equals(ip) && senders.get(i).getPort() == port)
-            {
-                senders.get(i).close();
-                senders.remove(i);
-            }
-
-        }
-    }
+//    public synchronized void remove(String ip, int port) throws IOException
+//    {
+//        for (int i = 0; i < senders.size(); i++)
+//        {
+//            if (senders.get(i).getInetAddress().getHostAddress().equals(ip) && senders.get(i).getPort() == port)
+//            {
+//                senders.get(i).close();
+//                senders.remove(i);
+//            }
+//
+//        }
+//    }
 }

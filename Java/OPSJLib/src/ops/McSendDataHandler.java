@@ -26,8 +26,18 @@ public class McSendDataHandler implements SendDataHandler
 
     }
 
+    public void addPublisher(Publisher pub)
+    {
+        // Nothing to do for multicast
+    }
 
-    public boolean sendData(byte[] bytes, int size, Topic t)
+    public boolean removePublisher(Publisher pub)
+    {
+        // Nothing to do for multicast
+        return true;
+    }
+
+    public synchronized boolean sendData(byte[] bytes, int size, Topic t)
     {
         int nrSegmentsNeeded = (int)(size / StaticManager.MAX_SIZE) ;
         if(size % StaticManager.MAX_SIZE != 0)

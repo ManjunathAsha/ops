@@ -48,6 +48,7 @@ public class Publisher
     private long lastPublishTime;
     private volatile long sampleTime1;
     private volatile long sampleTime2;
+    private boolean started = false;
 
     public Publisher(Topic topic)
     {
@@ -58,7 +59,54 @@ public class Publisher
         this.participant = Participant.getInstance(topic.getDomainID(), topic.getParticipantID());
         inProcessTransport = participant.getInProcessTransport();
         init();
+    }
 
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        // Must tell the sendDataHandler that we don't need it anymore
+        // in case user hasn't called stop()
+        stop();
+        sendDataHandler = null;
+    }
+
+    private void init()
+    {
+        try
+        {
+            sendDataHandler = participant.getSendDataHandler(topic);
+            start();
+        }
+        catch (CommException ex)
+        {
+            participant.report(this.getClass().getName(), "init", ex.getMessage());
+        }
+    }
+
+    /// <summary>
+    /// Start the publisher (necessary when using TCP as transport and it has been stopped)
+    /// </summary>
+    public synchronized void start()
+    {
+        if (!started)
+        {
+            // Tell the sendDataHandler that we need it
+            sendDataHandler.addPublisher(this);
+            started = true;
+        }
+    }
+
+    /// <summary>
+    /// Close down the publisher (necessary when using TCP as transport)
+    /// </summary>
+    public synchronized void stop()
+    {
+        if (started)
+        {
+            // Tell the sendDataHandler that we don't need it anymore
+            sendDataHandler.removePublisher(this);
+            started = false;
+        }
     }
 
     protected void write(OPSObject o)
@@ -212,15 +260,4 @@ public class Publisher
         this.reliableWriteNrOfResends = reliableWriteNrOfResends;
     }
 
-    private void init()
-    {
-        try
-        {
-            sendDataHandler = participant.getSendDataHandler(topic);
-        }
-        catch (CommException ex)
-        {
-            participant.report(this.getClass().getName(), "init", ex.getMessage());
-        }
-    }
 }

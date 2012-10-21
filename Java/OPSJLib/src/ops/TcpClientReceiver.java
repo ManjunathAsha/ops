@@ -44,6 +44,7 @@ public class TcpClientReceiver implements Receiver
     private final int serverPort;
     private final String serverIp;
     private final int receiveBufferSize;
+    private boolean opened = false;
 
 
     public TcpClientReceiver(String serverIP, int serverPort, int receiveBufferSize) throws IOException
@@ -51,61 +52,108 @@ public class TcpClientReceiver implements Receiver
         this.serverPort = serverPort;
         this.serverIp = serverIP;
         this.receiveBufferSize = receiveBufferSize;
-        setupSocket(serverIP, serverPort, receiveBufferSize);
+        Open();
 
         sizePackBuffer = ByteBuffer.wrap(sizePackBytes).order(ByteOrder.LITTLE_ENDIAN);
     }
 
-    public void Open() throws IOException
+    public final void Open() throws IOException
     {
-        throw new IOException("Not Implemented Yet");
+        // Open is done by the Receive() method called by the ReceiveDataHandler
+        // If we do it here, we will hang for about 1 second if the publisher (i.e server) isn't available
+        //if (!this.opened)
+        //{
+        //    try
+        //    {
+        //        setupSocket(serverIp, serverPort, receiveBufferSize);
+        //        this.opened = true;
+        //    }
+        //    catch (SocketException)
+        //    {
+        //    }
+        //}
     }
 
     public void Close()
     {
-
+        if (opened && (socket != null))
+        {
+            try {
+                inputStream.close();
+                socket.close();
+            } catch (IOException ex) {
+                Logger.getLogger(TcpClientReceiver.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        opened = false;
     }
 
     public boolean receive(byte[] headerBytes, byte[] bytes, int offset)
     {
+        boolean failureDetected = false;
         try
         {
             if(socket == null)
             {
                 setupSocket(serverIp, serverPort, receiveBufferSize);
+                opened = true;
             }
 
             //First read the size of the incomming tcp packet
             int accumulatedSize = 0;
-            while(accumulatedSize < sizePackSize)
+            while(!failureDetected && (accumulatedSize < sizePackSize))
             {
-                accumulatedSize += inputStream.read(sizePackBytes, accumulatedSize, sizePackSize - accumulatedSize);
+                int numRead = inputStream.read(sizePackBytes, accumulatedSize, sizePackSize - accumulatedSize);
+                if (numRead <= 0)
+                {
+                    failureDetected = true; // Other side disconnected
+                }
+                accumulatedSize += numRead;
             }
 
-            //max_length = *((int*)(data + 18));
+            if (!failureDetected)
+            {
+                //max_length = *((int*)(data + 18));
             
-            //TODO: header and error check.
-            int dataSize =  sizePackBuffer.getInt(18) - headerBytes.length;
+                //TODO: header and error check.
+                int dataSize =  sizePackBuffer.getInt(18) - headerBytes.length;
 
-            accumulatedSize = 0;
-            while(accumulatedSize < headerBytes.length)
-            {
-                accumulatedSize += inputStream.read(headerBytes, accumulatedSize, headerBytes.length - accumulatedSize);
-            }
+                accumulatedSize = 0;
+                while(!failureDetected && (accumulatedSize < headerBytes.length))
+                {
+                    int numRead = inputStream.read(headerBytes, accumulatedSize, headerBytes.length - accumulatedSize);
+                    if (numRead <= 0)
+                    {
+                        failureDetected = true; // Other side disconnected
+                    }
+                    accumulatedSize += numRead;
+                }
 
-            accumulatedSize = 0;
-            while(accumulatedSize < dataSize)
-            {
-                accumulatedSize += inputStream.read(bytes, accumulatedSize + offset, dataSize - accumulatedSize);
-            }
+                accumulatedSize = 0;
+                while(!failureDetected && (accumulatedSize < dataSize))
+                {
+                    int numRead = inputStream.read(bytes, accumulatedSize + offset, dataSize - accumulatedSize);
+                    if (numRead <= 0)
+                    {
+                        failureDetected = true; // Other side disconnected
+                    }
+                    accumulatedSize += numRead;
+                }
             
-            newBytesEvent.fireEvent(new Integer(dataSize + headerBytes.length));
-            return true;
+                if (!failureDetected)
+                {
+                    newBytesEvent.fireEvent(new Integer(dataSize + headerBytes.length));
+                    return true;
+                }
+            }
 
+        }
+        catch (IOException ex)
+        {
+            failureDetected = true;
+        }
 
-
-
-        } catch (IOException ex)
+        if (failureDetected)
         {
             try
             {
@@ -121,10 +169,8 @@ public class TcpClientReceiver implements Receiver
             {
                 socket = null;
             }
-           return false;
         }
-
-
+        return false;
     }
 
     public Event getNewBytesEvent()
@@ -135,7 +181,10 @@ public class TcpClientReceiver implements Receiver
     private void setupSocket(String serverIP, int serverPort, int receiveBufferSize) throws SocketException, IOException
     {
         socket = new Socket(serverIP, serverPort);
-        socket.setReceiveBufferSize(receiveBufferSize);
+        if(receiveBufferSize > 0)
+        {
+            socket.setReceiveBufferSize(receiveBufferSize);
+        }
         //socket.setSoTimeout(100);
         inputStream = socket.getInputStream();
     }

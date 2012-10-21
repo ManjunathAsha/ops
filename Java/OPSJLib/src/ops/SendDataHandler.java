@@ -10,5 +10,7 @@ package ops;
  */
 public interface SendDataHandler
 {
+    void addPublisher(Publisher pub);
+    boolean removePublisher(Publisher pub);
     boolean sendData(byte[] bytes, int size, Topic t);
 }

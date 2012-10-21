@@ -25,9 +25,10 @@ class MulticastSender implements Sender
 
     public MulticastSender(int port, String localInterface, int ttl, int outSocketBufferSize) throws IOException
     {
-        //multicastSocket = new MulticastSocket(port);
-        multicastSocket = MulticastSocketCreator.getMulticastSocket(port);
+        //Can't use this, we want a separate socket, since we have our own outSocketBufferSize
+        //multicastSocket = MulticastSocketCreator.getMulticastSocket(port);
 
+        multicastSocket = new MulticastSocket(port);
 
         if (!localInterface.equals("0.0.0.0"))
         {//For some reason this method throws an error if we try to set outgoing interface to ANY.
@@ -39,11 +40,8 @@ class MulticastSender implements Sender
             multicastSocket.setSendBufferSize(outSocketBufferSize);
         }
         multicastSocket.setTimeToLive(ttl);
-
-
-
-
     }
+
     public boolean sendTo(byte[] bytes, int offset, int size, String ip, int port)
     {
         try

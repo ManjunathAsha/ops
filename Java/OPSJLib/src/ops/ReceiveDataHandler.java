@@ -77,6 +77,9 @@ public class ReceiveDataHandler
 
         if (!hasSubscribers)
         {
+            // Reset some variables so we can start fresh
+            expectedFragment = 0;
+            bytesReceived = 0;
             addNewBytesEventListener();
             try {
                 receiver.Open();
@@ -142,6 +145,7 @@ public class ReceiveDataHandler
         } catch (IOException ex)
         {
             expectedFragment = 0;
+            bytesReceived = 0;
         }
     }
 
