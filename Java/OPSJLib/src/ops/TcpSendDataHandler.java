@@ -8,25 +8,21 @@ package ops;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
- * @author Anton Gravestam
+ * @author Lelle
  */
-public class McSendDataHandler implements SendDataHandler
+public class TcpSendDataHandler implements SendDataHandler
 {
-    private Sender sender;
+    private TcpServerSender sender;
     private final InetAddress sinkIP;
     private Vector<Publisher> publishers = new Vector<Publisher>();
 
-    public McSendDataHandler(Topic t, String localInterface) throws IOException
+    public TcpSendDataHandler(Topic t, String localInterface) throws IOException
     {
-        //TODO:
-        sender = new MulticastSender(0, localInterface, 0, t.getOutSocketBufferSize());
+        sender = new TcpServerSender(t.getDomainAddress(), t.getPort(), t.getOutSocketBufferSize());
         sinkIP = InetAddress.getByName(t.getDomainAddress());
-
     }
 
     public synchronized void addPublisher(Publisher pub)
@@ -35,12 +31,8 @@ public class McSendDataHandler implements SendDataHandler
 
         if (publishers.size() == 1)
         {
-            try {
-                // The first publisher
-                sender.open();
-            } catch (IOException ex) {
-                Logger.getLogger(McSendDataHandler.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            // The first publisher
+            sender.open();
         }
     }
 
@@ -50,7 +42,7 @@ public class McSendDataHandler implements SendDataHandler
 
         if (publishers.isEmpty())
         {
-            // No more publishers
+            // No more publishers, stop the TCP listener
             sender.close();
         }
 
@@ -74,7 +66,6 @@ public class McSendDataHandler implements SendDataHandler
             }
         }
         return true;
-       
     }
 
 }

@@ -37,6 +37,16 @@ public class TcpSenderList implements Sender
     Vector<Socket> senders = new Vector<Socket>();
     private static final String sizeHeader = "opsp_tcp_size_info";
 
+    public void open()
+    {
+        // Nothing to do
+    }
+
+    public void close()
+    {
+        // Nothing to do
+    }
+
     public synchronized void emptyList()
     {
         for (Socket s : senders)

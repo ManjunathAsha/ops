@@ -4,6 +4,7 @@
  */
 package ops;
 
+import java.io.IOException;
 import java.net.InetAddress;
 
 /**
@@ -12,6 +13,8 @@ import java.net.InetAddress;
  */
 public interface Sender
 {
+    void open() throws IOException;
+    void close();
     boolean sendTo(byte[] bytes, String ip, int port);
     boolean sendTo(byte[] bytes, int offset, int size, String ip, int port);
 
