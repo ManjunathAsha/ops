@@ -15,7 +15,7 @@ namespace ops
     private:
         SendDataHandler* udpSendDataHandler;
 
-        std::map<std::string, SendDataHandler*> tcpSendDataHandlers;
+        std::map<std::string, SendDataHandler*> sendDataHandlers;
 
         ParticipantInfoDataListener* partInfoListener;
 

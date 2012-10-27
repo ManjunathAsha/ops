@@ -46,7 +46,6 @@ namespace ops
         }
 
         receiver->addListener(this);
-        receiver->asynchWait(memMap.getSegment(expectedSegment), memMap.getSegmentSize());
 
     }
     ///Destructor
@@ -61,7 +60,10 @@ namespace ops
     {
         SafeLock lock(&messageLock);
 		Notifier<OPSMessage*>::addListener(listener);
-		if (getNrOfListeners() == 1) receiver->start();
+		if (getNrOfListeners() == 1) {
+			receiver->start();
+	        receiver->asynchWait(memMap.getSegment(expectedSegment), memMap.getSegmentSize());
+		}
 	}
 
 	// Overridden from Notifier<OPSMessage*>
@@ -203,9 +205,17 @@ namespace ops
 
     }
 
+	// Called when there are no more listeners and we are about to be put on the garbage-list for later removal
     void ReceiveDataHandler::stop()
     {
         receiver->removeListener(this);
+
+		// Need to release the last message we received, if any.
+		// (We always keep a reference to the last message received)
+		// If we don't, the garbage-cleaner won't delete us.
+		if (message) message->unreserve();
+		message = NULL;
+
 ///LA ///TTTTT        receiver->stop();
     }
 

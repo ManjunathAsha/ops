@@ -43,6 +43,10 @@ namespace ops
 		  max_length(65535), m_receiveCounter(0),
 		  cancelled(false)
 		{
+			ipaddress = mcAddress;
+			this->localInterface = localInterface;
+			this->inSocketBufferSizent = inSocketBufferSizent;
+
 			boost::asio::io_service* ioService = ((BoostIOServiceImpl*)ioServ)->boostIOService;//((BoostIOServiceImpl*)Participant::getIOService())->boostIOService;
 			//udp::resolver resolver(*ioService);
 			//udp::resolver::query query(boost::asio::ip::host_name(),"");
@@ -55,10 +59,12 @@ namespace ops
 
 			localEndpoint = new boost::asio::ip::udp::endpoint(ipAddr, bindPort);
 			
-			//localEndpoint = new udp::endpoint(addr, bindPort);
-
 			sock = new boost::asio::ip::udp::socket(*ioService);
+		}
 
+		///Override from Receiver
+		void start()
+		{
 			sock->open(localEndpoint->protocol());
 				
 			if(inSocketBufferSizent > 0)
@@ -73,24 +79,29 @@ namespace ops
 					Participant::reportStaticError(&ops::BasicError("MulticastReceiver", "MulticastReceiver", "Socket buffer size could not be set"));
 				}
 			}
-			//boost::asio::socket_base::receive_buffer_size option(inSocketBufferSizent);
-			//sock->set_option(option);
 			
 			sock->set_option(boost::asio::ip::udp::socket::reuse_address(true));
 			sock->bind(*localEndpoint);
 
 			// Join the multicast group.
-///LA
-			////const boost::asio::ip::address multicastAddress = boost::asio::ip::address_v4::from_string(mcAddress);
-			//////const boost::asio::ip::address multicastAddress = boost::asio::ip::address::from_string(mcAddress);
-			////sock->set_option(boost::asio::ip::multicast::join_group(multicastAddress));
-			const boost::asio::ip::address_v4 multicastAddress = boost::asio::ip::address_v4::from_string(mcAddress);
+			const boost::asio::ip::address_v4 multicastAddress = boost::asio::ip::address_v4::from_string(ipaddress);
 			const boost::asio::ip::address_v4 networkInterface(boost::asio::ip::address_v4::from_string(localInterface));
 			sock->set_option(boost::asio::ip::multicast::join_group(multicastAddress,networkInterface));
-///LA
 
-			ipaddress = mcAddress;
 			port = sock->local_endpoint().port();
+		}
+
+		///Override from Receiver
+		void stop()
+		{
+#if BOOST_VERSION == 103800
+			boost::system::error_code error(BREAK_COMM_ERROR_CODE, boost::system::generic_category );
+#else
+			boost::system::error_code error(BREAK_COMM_ERROR_CODE, boost::system::generic_category() );
+#endif
+			cancelled = true;
+			// sock->cancel(error);
+			sock->close();
 		}
 
 		void asynchWait(char* bytes, int size)
@@ -122,7 +133,7 @@ namespace ops
 				handleReadError(error);
 			}
 		}
-
+			
 		void handleReadOK(char* bytes_, int size)
 		{
 			notifyNewEvent(BytesSizePair(data, size));
@@ -136,7 +147,7 @@ namespace ops
 				return;
 			}
 			//notifyNewEvent(data);
-			//printf("___________handleReadError__________\n");
+			//printf("___________handleReadError__________ %d\n", error.value());
 			Participant::reportStaticError(&ops::BasicError("MulticastReceiver", "handleReadError", "Error"));
 			
 			InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
@@ -202,21 +213,11 @@ namespace ops
 			return ipaddress;
 		}
 
-		void start()
-		{
-		}
-
-		///Override from Receiver
-		void stop()
-		{
-			boost::system::error_code error(BREAK_COMM_ERROR_CODE, boost::system::generic_category);
-			cancelled = true;
-			sock->cancel(error);
-		}
-		
 	private:
 		int port;
 		std::string ipaddress;
+		std::string localInterface;
+		__int64 inSocketBufferSizent;
 		boost::asio::ip::udp::socket* sock;
 		boost::asio::ip::udp::endpoint* localEndpoint;
 		boost::asio::ip::udp::endpoint lastEndpoint;

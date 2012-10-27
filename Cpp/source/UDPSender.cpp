@@ -32,13 +32,31 @@
 namespace ops
 {
     using boost::asio::ip::udp;
-	UDPSender::UDPSender(std::string localInterface, int ttl, __int64 outSocketBufferSize, bool multicastSocket)
-           
+	UDPSender::UDPSender(std::string localInterface, int ttl, __int64 outSocketBufferSize, bool multicastSocket):
+		socket(NULL)
     {
+		this->localInterface = localInterface;
+		this->ttl = ttl;
+		this->outSocketBufferSize = outSocketBufferSize;
+		this->multicastSocket = multicastSocket;
+
 		boost::asio::ip::address ipAddr(boost::asio::ip::address_v4::from_string(localInterface));
 
 		localEndpoint = new boost::asio::ip::udp::endpoint(ipAddr, 0);
-        //localEndpoint = new boost::asio::ip::udp::endpoint(udp::v4(), 0);
+
+		open();
+    }
+
+    UDPSender::~UDPSender()
+    {
+		close();
+        delete localEndpoint;
+    }
+
+	void UDPSender::open()
+	{
+		if (socket != NULL) return;
+
         socket = new boost::asio::ip::udp::socket(io_service, localEndpoint->protocol());
 
 		if(outSocketBufferSize > 0)
@@ -59,25 +77,23 @@ namespace ops
 			boost::asio::ip::multicast::hops ttlOption(ttl);
 			socket->set_option(ttlOption);
 
-	///LA
 			boost::asio::ip::address_v4 local_interface = boost::asio::ip::address_v4::from_string(localInterface);
 			boost::asio::ip::multicast::outbound_interface ifOption(local_interface);
 			socket->set_option(ifOption);
-	///LA
 		}
 
 		boost::asio::socket_base::non_blocking_io command(true);
 		socket->io_control(command);
-	
-    }
+	}
 
-    UDPSender::~UDPSender()
-    {
-        
-        socket->close();
-        delete socket;
-        delete localEndpoint;
-    }
+	void UDPSender::close()
+	{
+		if (socket) {
+	        socket->close();
+			delete socket;
+			socket = NULL;
+		}
+	}
 
     bool UDPSender::sendTo(char* buf, int size, const std::string& ip, int port)
     {
@@ -88,9 +104,18 @@ namespace ops
             socket->send_to(boost::asio::buffer(buf, size), endpoint);
             return true;
         }
+		catch (std::exception& ex)
+        {
+			std::stringstream ss;
+			ss << "Error when sending udp message: " << ex.what() << " Params: buf = " << buf << ", size = " << size << ", ip = " << ip << ", port = " << port;  
+			Participant::reportStaticError(&ops::BasicError("UDPSender", "sendTo", ss.str()));
+            return false;
+        }
         catch (...)
         {
-			Participant::reportStaticError(&ops::BasicError("UDPSender", "sendTo", "Error when sending udp message."));
+			std::stringstream ss;
+			ss << "Error when sending udp message: Params: buf = " << buf << ", size = " << size << ", ip = " << ip << ", port = " << port;  
+			Participant::reportStaticError(&ops::BasicError("UDPSender", "sendTo", ss.str()));
             return false;
         }
 

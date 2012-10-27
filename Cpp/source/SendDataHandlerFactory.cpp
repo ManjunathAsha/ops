@@ -18,7 +18,6 @@ namespace ops
 	{	
 		udpSendDataHandler = NULL;
 	}
-
 	
 	SendDataHandler* SendDataHandlerFactory::getSendDataHandler(Topic& top, Participant* participant)
 	{
@@ -31,9 +30,16 @@ namespace ops
 
 		SafeLock lock(&mutex);
 
+		if(sendDataHandlers.find(key) != sendDataHandlers.end())
+		{
+			return sendDataHandlers[key];
+		}			
+
 		if(top.getTransport() == Topic::TRANSPORT_MC)
 		{
-			return new McSendDataHandler(top, participant->getDomain()->getLocalInterface(), 1); //TODO: make ttl configurable.
+			SendDataHandler* newSendDataHandler = new McSendDataHandler(top, participant->getDomain()->getLocalInterface(), 1); //TODO: make ttl configurable.
+			sendDataHandlers[key] = newSendDataHandler;
+			return newSendDataHandler;
 		}
 		else if(top.getTransport() == Topic::TRANSPORT_UDP)
 		{
@@ -51,29 +57,20 @@ namespace ops
 		}
 		else if(top.getTransport() == Topic::TRANSPORT_TCP)
 		{
-			if(tcpSendDataHandlers.find(key) == tcpSendDataHandlers.end() )
-			{
-				SendDataHandler* newSendDataHandler = new TCPSendDataHandler(top, participant->getIOService());
-				tcpSendDataHandlers[key] = newSendDataHandler;
-				return newSendDataHandler;
-			}
-			else
-			{
-				return tcpSendDataHandlers[key];
-			}			
-
+			SendDataHandler* newSendDataHandler = new TCPSendDataHandler(top, participant->getIOService());
+			sendDataHandlers[key] = newSendDataHandler;
+			return newSendDataHandler;
 		}
 		else
 		{
 			return NULL;
 		}
-
 	}
+
 	void SendDataHandlerFactory::releaseSendDataHandler(Topic& top, Participant* participant)
 	{
 		SafeLock lock(&mutex);
 
 	}
-
 
 }

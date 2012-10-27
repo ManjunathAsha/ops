@@ -39,8 +39,8 @@ namespace ops
         UDPSender(std::string localInterface = "0.0.0.0", int ttl = 1, __int64 outSocketBufferSize = 16000000, bool multicastSocket = false);
         ~UDPSender();
         
-		void open() {}
-		void close() {}
+		void open();
+		void close();
 
         ///Override from Sender
         bool sendTo(char* buf, int size, const std::string& ip, int port);
@@ -60,7 +60,10 @@ namespace ops
         boost::asio::ip::udp::socket* socket;           //<-- The socket that sends data.
         boost::asio::io_service io_service;             //<-- Required for boost sockets.
 
-		
+		std::string localInterface;
+		int ttl;
+		__int64 outSocketBufferSize;
+		bool multicastSocket;
 
 
     };

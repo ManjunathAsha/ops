@@ -64,6 +64,13 @@ namespace ops
             stop();
         }
         delete deadlineTimer;
+
+		while (messageBuffer.size() > 0) {
+			messageBuffer.back()->unreserve();
+			messageBuffer.pop_back();
+		}
+		delete newDataMutex;
+		delete newDataEvent;
     }
 
     void Subscriber::start()
