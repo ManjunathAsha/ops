@@ -46,14 +46,6 @@ namespace ops
             sender = Sender::createUDPSender();
         }
 
-		void addPublisher(void* client) 
-		{
-		}
-		
-		void removePublisher(void* client) 
-		{
-		}
-
         bool sendData(char* buf, int bufSize, Topic& topic)
         {
             SafeLock lock(&mutex);
@@ -150,11 +142,11 @@ namespace ops
     private:
         //Participant* participant;
         //std::map<std::string, Sender*> senders;
-        Sender* sender;
+        //moved to base class Sender* sender;
 
         MemoryMap* memMap;
 
-        Lockable mutex;
+        //moved to base class Lockable mutex;
 
         class IpPortPair
         {
