@@ -33,6 +33,7 @@ namespace ops
 		virtual void addRunnable(Runnable* runnable) = 0;
 		virtual void removeRunnable(Runnable* runnable) = 0;
 		virtual void start() = 0;
+		virtual ~ThreadPool() {};
 	};
 
 }
