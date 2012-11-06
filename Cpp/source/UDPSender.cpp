@@ -97,6 +97,7 @@ namespace ops
 
     bool UDPSender::sendTo(char* buf, int size, const std::string& ip, int port)
     {
+		if (!socket) return false;
         try
         {
             boost::asio::ip::address ipaddress = boost::asio::ip::address::from_string(ip.c_str());
@@ -122,6 +123,7 @@ namespace ops
     }
 	int UDPSender::receiveReply(char* buf, int size)
 	{
+		if (!socket) return 0;
 		int nReceived = socket->receive(boost::asio::buffer(buf, size));
 		return nReceived;
 	}

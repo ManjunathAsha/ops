@@ -146,10 +146,16 @@ namespace ops
 				//Communcation has been canceled from stop, do not scedule new receive
 				return;
 			}
+
 			//notifyNewEvent(data);
 			//printf("___________handleReadError__________ %d\n", error.value());
 			Participant::reportStaticError(&ops::BasicError("MulticastReceiver", "handleReadError", "Error"));
 			
+			//WSAEFAULT (10014) "Illegal buffer address" is fatal, happens e.g. if a too small buffer is given and
+			// it probably wont go away by calling the same again, so just report error and then exit without 
+			// starting a new async_receive().
+			if (error.value() == WSAEFAULT) return;
+
 			InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
 			sock->async_receive(
 				boost::asio::buffer(data, max_length), 

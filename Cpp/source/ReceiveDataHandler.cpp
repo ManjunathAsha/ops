@@ -62,6 +62,8 @@ namespace ops
 		Notifier<OPSMessage*>::addListener(listener);
 		if (getNrOfListeners() == 1) {
 			receiver->start();
+			expectedSegment = 0;
+			currentMessageSize = 0;
 	        receiver->asynchWait(memMap.getSegment(expectedSegment), memMap.getSegmentSize());
 		}
 	}
@@ -192,6 +194,14 @@ namespace ops
             else
             {
                 expectedSegment++;
+
+				if (expectedSegment >= memMap.getNrOfSegments()) {
+					BasicError err("ReceiveDataHandler", "onNewEvent", "Buffer too small for received message.");
+					participant->reportError(&err);
+					expectedSegment = 0;
+					currentMessageSize = 0;
+				}
+
             }
             receiver->asynchWait(memMap.getSegment(expectedSegment), memMap.getSegmentSize());
         }
