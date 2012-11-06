@@ -26,6 +26,7 @@ namespace ops
 	{
 	public:
 		virtual void run() = 0;
+		virtual void stop() = 0;
 		virtual ~IOService(){};
 
 		static IOService* create();
