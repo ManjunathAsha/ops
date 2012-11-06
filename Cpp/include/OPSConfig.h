@@ -33,6 +33,12 @@ namespace ops
 		
 			archiver->inout<Domain>(std::string("domains"), domains);
 		}
+
+		std::vector<Domain*> getDomains()
+		{
+			return domains;
+		}
+
 	private:
 		std::vector<Domain* > domains;
 
