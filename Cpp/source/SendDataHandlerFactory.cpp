@@ -16,6 +16,7 @@ namespace ops
 
 	SendDataHandlerFactory::SendDataHandlerFactory()
 	{	
+		// There is only one McUdpSendDataHandler for each participant
 		udpSendDataHandler = NULL;
 	}
 	
@@ -46,6 +47,10 @@ namespace ops
 			if(udpSendDataHandler == NULL)
 			{
 				udpSendDataHandler = new McUdpSendDataHandler();
+
+				// Setup a listener on the participant info data published by participants on our domain.
+				// We use the information for topics with UDP as transport, to know the destination for UDP sends
+				// ie. we extract ip and port from the information and add it to our McUdpSendDataHandler
 				partInfoListener = new ParticipantInfoDataListener(udpSendDataHandler, participant);
 
 				participant->partInfoSub = new Subscriber(participant->createParticipantInfoTopic());

@@ -114,7 +114,7 @@ namespace ops
         virtual ~TCPServer()
         {
 			close();
-			delete acceptor;
+			if (acceptor) delete acceptor;
 			delete sock;
 			delete endpoint;
 		}
@@ -122,8 +122,7 @@ namespace ops
 		void close()
 		{
 			canceled = true;
-			acceptor->close();
-			//sock->close();
+			if (acceptor) acceptor->close();
 			for(int i = connectedSockets.size() - 1; i >= 0 ; i--)
 			{
 				connectedSockets[i]->close();
