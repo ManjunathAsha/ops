@@ -41,11 +41,11 @@ namespace ops
     public:
 
         UDPReceiver(int bindPort, IOService* ioServ, std::string localInterface = "0.0.0.0", __int64 inSocketBufferSizent = 16000000) :
-        max_length(65535),
-        cancelled(false)
+	        max_length(65535), m_receiveCounter(0),
+			localEndpoint(NULL),
+			cancelled(false)
         {
             boost::asio::io_service* ioService = ((BoostIOServiceImpl*) ioServ)->boostIOService;
-
 
             if (localInterface == "0.0.0.0")
             {
@@ -64,18 +64,12 @@ namespace ops
                     }
                     it++;
                 }
-
-
             }
             else
             {
                 boost::asio::ip::address ipAddr(boost::asio::ip::address_v4::from_string(localInterface));
                 localEndpoint = new boost::asio::ip::udp::endpoint(ipAddr, bindPort);
-
             }
-
-
-
 
             sock = new boost::asio::ip::udp::socket(*ioService);
 
@@ -100,50 +94,43 @@ namespace ops
 
             //ipaddress = localEndpoint->address().to_string();
             port = sock->local_endpoint().port();
-
-
-
         }
 
         void asynchWait(char* bytes, int size)
         {
             data = bytes;
             max_length = size;
+			InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
             sock->async_receive(
                     boost::asio::buffer(data, max_length),
                     boost::bind(&UDPReceiver::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-
         }
 
-        void handle_receive_from(const boost::system::error_code& error,
-                size_t nrBytesReceived)
+        void handle_receive_from(const boost::system::error_code& error, size_t nrBytesReceived)
         {
-            if (cancelled)
+			InterlockedDecrement(&m_receiveCounter);	// keep track of outstanding requests
+
+			if (cancelled)
             {
                 return;
             }
             if (!error && nrBytesReceived > 0)
             {
                 handleReadOK(data, nrBytesReceived);
-
             }
             else
             {
                 handleReadError(error);
             }
-
-
         }
 
         void handleReadOK(char* bytes_, int size)
         {
             notifyNewEvent(BytesSizePair(data, size));
-
         }
 
         void handleReadError(const boost::system::error_code& error)
         {
-
             if (error.value() == BREAK_COMM_ERROR_CODE)
             {
                 //Communcation has been canceled from stop, do not scedule new receive
@@ -152,17 +139,36 @@ namespace ops
 
             Participant::reportStaticError(&ops::BasicError("UDPReceiver", "handleReadError", "Error"));
 
+			//WSAEFAULT (10014) "Illegal buffer address" is fatal, happens e.g. if a too small buffer is given and
+			// it probably wont go away by calling the same again, so just report error and then exit without 
+			// starting a new async_receive().
+			if (error.value() == WSAEFAULT) return;
+
+			InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
             sock->async_receive(
                     boost::asio::buffer(data, max_length),
                     boost::bind(&UDPReceiver::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-
         }
 
         ~UDPReceiver()
         {
+			// Make sure socket is closed
+#if BOOST_VERSION == 103800
+			boost::system::error_code error(BREAK_COMM_ERROR_CODE, boost::system::generic_category);
+#else
+			boost::system::error_code error(BREAK_COMM_ERROR_CODE, boost::system::generic_category());
+#endif
+            cancelled = true;
+			sock->close();
+
+			/// We must handle asynchronous callbacks that haven't finished yet.
+			/// This approach works, but the recommended boost way is to use a shared pointer to the instance object
+			/// between the "normal" code and the callbacks, so the callbacks can check if the object exists.
+			while (m_receiveCounter) 
+				Sleep(1);
+
             delete sock;
             delete localEndpoint;
-            //delete ioService;
         }
 
         int receive(char* buf, int size)
@@ -177,7 +183,6 @@ namespace ops
                 Participant::reportStaticError(&ops::BasicError("UDPReceiver", "receive", "Exception"));
                 return -1;
             }
-
         }
 
         int available()
@@ -209,19 +214,25 @@ namespace ops
         }
 
         ///Override from Receiver
-
 		void start()
 		{
+			/// The UDP Receiver is open the whole life time
+            cancelled = false;
 		}
 
         void stop()
         {
-            boost::system::error_code error(BREAK_COMM_ERROR_CODE, boost::system::generic_category);
+			/// The UDP Receiver is open the whole life time
+			// Cancel the asynch_receive()
             cancelled = true;
-            sock->cancel(error);
+			sock->cancel();
 
+			/// We must handle asynchronous callbacks that haven't finished yet.
+			/// This approach works, but the recommended boost way is to use a shared pointer to the instance object
+			/// between the "normal" code and the callbacks, so the callbacks can check if the object exists.
+			while (m_receiveCounter) 
+				Sleep(1);
         }
-
 
     private:
         int port;
@@ -237,7 +248,8 @@ namespace ops
         static const int BREAK_COMM_ERROR_CODE = 345676;
         bool cancelled;
 
-
+		// Counter to keep track of our outstanding requests, that will result in callbacks to us
+		volatile LONG m_receiveCounter;
     };
 }
 #endif

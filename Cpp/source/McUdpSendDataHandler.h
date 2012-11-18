@@ -54,7 +54,7 @@ namespace ops
             std::map<std::string, IpPortPair>::iterator it;
 
             bool result = true;
-            //Loop all sinks and send data here, loop backwards to be able to remove items while looping.
+            //Loop over all sinks and send data, remove items that isn't "alive".
 
             std::stack<std::string> sinksToDelete;
 
@@ -67,7 +67,7 @@ namespace ops
                 }
                 else //Remove it.
                 {
-                    std::cout << " removing " << it->second.getKey() << std::endl;
+					std::cout << topic.getName() << " removing " << it->second.getKey() << std::endl;
                     sinksToDelete.push(it->second.getKey());
                 }
             }
@@ -120,23 +120,24 @@ namespace ops
 
                     //We already have a map of sinks for this topic lets just add the new sink to the map.
                     topicSinkMap[topic][ipPort.getKey()] = ipPort;
-                    std::cout << topic << " added to sink" << ipPort.getKey() << std::endl;
+                    std::cout << topic << " added to existing sink " << ipPort.getKey() << std::endl;
 
                     return;
                 }
                 else //this sink is already registred with this topic
                 {
-                    topicSinkMap[topic][ipPort.getKey()].feedWatcdog();
+                    topicSinkMap[topic][ipPort.getKey()].feedWatchdog();
                     return;
                 }
 
             }
-
-
         }
 
         virtual ~McUdpSendDataHandler()
         {
+            SafeLock lock(&mutex);
+            delete sender;
+			sender = NULL;
         }
 
     private:
@@ -144,7 +145,7 @@ namespace ops
         //std::map<std::string, Sender*> senders;
         //moved to base class Sender* sender;
 
-        MemoryMap* memMap;
+        // MemoryMap* memMap;
 
         //moved to base class Lockable mutex;
 
@@ -169,7 +170,7 @@ namespace ops
                 return (TimeHelper::currentTimeMillis() - lastTimeAlive) < ALIVE_TIMEOUT;
             }
 
-            void feedWatcdog()
+            void feedWatchdog()
             {
                 lastTimeAlive = TimeHelper::currentTimeMillis();
             }
