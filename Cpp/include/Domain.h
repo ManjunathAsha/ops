@@ -36,6 +36,7 @@ namespace ops
 		int outSocketBufferSize;
 		std::vector<Topic* > topics;
 		std::string domainID;
+		int metaDataMcPort;
 	public:
 		Domain();
 		std::string getDomainAddress();
@@ -43,7 +44,7 @@ namespace ops
 		virtual Topic getTopic(std::string name);
 		bool existsTopic(std::string name);
 		std::string getDomainID();
-
+		int getMetaDataMcPort();
 		
 		void serialize(ArchiverInOut* archiver);
 		int getTimeToLive();

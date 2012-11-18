@@ -56,6 +56,7 @@ namespace ops
 		friend class Publisher;
 		friend class ReceiveDataHandlerFactory;
 		friend class SendDataHandlerFactory;
+		friend class ParticipantInfoDataListener;
 	public:
 
 		///By Singelton, one Participant per participantID
@@ -138,6 +139,9 @@ namespace ops
 		Publisher* partInfoPub;
 		///The ParticipantInfoData that partInfoPub will publish periodically
 		ParticipantInfoData partInfoData;
+		Lockable partInfoDataMutex;
+
+		bool hasPublisherOn(std::string topicName);
 
 		Domain* domain;		
 

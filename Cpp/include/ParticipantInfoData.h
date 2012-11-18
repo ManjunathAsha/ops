@@ -31,6 +31,8 @@ namespace ops
 		ParticipantInfoData()
 		{
 			appendType(std::string("ops.ParticipantInfoData"));
+			mc_udp_port = 0;
+			mc_tcp_port = 0;
 		}
 
 		

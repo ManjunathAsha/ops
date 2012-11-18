@@ -24,11 +24,12 @@
 namespace ops
 {
 
-	Domain::Domain() : 
-timeToLive(1), 
-localInterface("0.0.0.0"),
-inSocketBufferSize(16000000),
-outSocketBufferSize(16000000)
+Domain::Domain() : 
+	timeToLive(1), 
+	localInterface("0.0.0.0"),
+	inSocketBufferSize(16000000),
+	outSocketBufferSize(16000000),
+	metaDataMcPort(9494)		// Default port 
 {
 	appendType(std::string("Domain"));
 
@@ -93,7 +94,7 @@ void Domain::serialize(ArchiverInOut* archiver)
 	archiver->inout(std::string("timeToLive"), timeToLive);
 	archiver->inout(std::string("inSocketBufferSize"), inSocketBufferSize);
 	archiver->inout(std::string("outSocketBufferSize"), outSocketBufferSize);
-
+	archiver->inout(std::string("metaDataMcPort"), metaDataMcPort);
 }
 int Domain::getTimeToLive()
 {
@@ -112,6 +113,10 @@ int Domain::getInSocketBufferSize()
 int Domain::getOutSocketBufferSize()
 {
 	return outSocketBufferSize;
+}
+int Domain::getMetaDataMcPort()
+{
+	return metaDataMcPort;
 }
 
 Domain::~Domain(){}

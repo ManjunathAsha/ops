@@ -5,7 +5,7 @@
 
 #include "ReceiveDataHandler.h"
 #include "UDPReceiver.h"
-
+#include "BasicError.h"
 
 
 namespace ops
@@ -21,9 +21,6 @@ namespace ops
         udpReceiveDataHandler = new ReceiveDataHandler(topic, participant);
         //--------------------------------------------
 
-        participant->partInfoData.languageImplementation = "c++";
-        participant->partInfoData.id = participant->participantID;
-        participant->partInfoData.domain = participant->domainID;
         participant->partInfoData.ip = ((UDPReceiver*) udpReceiveDataHandler->getReceiver())->getAddress();
         participant->partInfoData.mc_udp_port = ((UDPReceiver*) udpReceiveDataHandler->getReceiver())->getPort();
 
@@ -43,52 +40,50 @@ namespace ops
         {
             //If we already have a ReceiveDataHandler for this topic, return it.
             return receiveDataHandlerInstances[key];
-
         }
         else if (top.getTransport() == Topic::TRANSPORT_MC)
         {
             ReceiveDataHandler* newReceiveDataHandler = NULL;
-            //Check if there isnt already a multicast configured ReceiveDataHandler on tops port. If not create one.
-            if (multicastReceiveDataHandlerInstances.find(top.getPort()) == multicastReceiveDataHandlerInstances.end())
-            {
+///            //Check if there isnt already a multicast configured ReceiveDataHandler on tops port. If not create one.
+///            if (multicastReceiveDataHandlerInstances.find(top.getPort()) == multicastReceiveDataHandlerInstances.end())
+///            {
                 newReceiveDataHandler = new ReceiveDataHandler(top, participant);
-                multicastReceiveDataHandlerInstances[top.getPort()] = newReceiveDataHandler;
-			} else {
-				newReceiveDataHandler = multicastReceiveDataHandlerInstances[top.getPort()];
-			}
-            participant->partInfoData.subscribeTopics.push_back(TopicInfoData(top));
+///                multicastReceiveDataHandlerInstances[top.getPort()] = newReceiveDataHandler;
+///			} else {
+///				newReceiveDataHandler = multicastReceiveDataHandlerInstances[top.getPort()];
+///			}
+///            participant->partInfoData.subscribeTopics.push_back(TopicInfoData(top));
             receiveDataHandlerInstances[key] = newReceiveDataHandler;
-            return multicastReceiveDataHandlerInstances[top.getPort()];
+            return newReceiveDataHandler;
         }
         else if (top.getTransport() == Topic::TRANSPORT_TCP)
         {
             ReceiveDataHandler* newReceiveDataHandler = NULL;
-            //Check if there isnt already a tcp configured ReceiveDataHandler on tops port. If not create one.
-            if (tcpReceiveDataHandlerInstances.find(top.getPort()) == tcpReceiveDataHandlerInstances.end())
-            {
+///            //Check if there isnt already a tcp configured ReceiveDataHandler on tops port. If not create one.
+///            if (tcpReceiveDataHandlerInstances.find(top.getPort()) == tcpReceiveDataHandlerInstances.end())
+///            {
                 newReceiveDataHandler = new ReceiveDataHandler(top, participant);
-                tcpReceiveDataHandlerInstances[top.getPort()] = newReceiveDataHandler;
-			} else {
-                newReceiveDataHandler = tcpReceiveDataHandlerInstances[top.getPort()];
-			}
-            participant->partInfoData.subscribeTopics.push_back(TopicInfoData(top));
+///                tcpReceiveDataHandlerInstances[top.getPort()] = newReceiveDataHandler;
+///			} else {
+///                newReceiveDataHandler = tcpReceiveDataHandlerInstances[top.getPort()];
+///			}
+///            participant->partInfoData.subscribeTopics.push_back(TopicInfoData(top));
             receiveDataHandlerInstances[key] = newReceiveDataHandler;
-            return tcpReceiveDataHandlerInstances[top.getPort()];
+            return newReceiveDataHandler;
         }
         else if (top.getTransport() == Topic::TRANSPORT_UDP)
         {
-            participant->partInfoData.subscribeTopics.push_back(TopicInfoData(top));
-            receiveDataHandlerInstances[key] = udpReceiveDataHandler;
+///            participant->partInfoData.subscribeTopics.push_back(TopicInfoData(top));
+			///LA We can't put the handler in the list, since it then can be deleted, and we don't want that (only created in the constructor)
+            ///LA receiveDataHandlerInstances[key] = udpReceiveDataHandler;
             return udpReceiveDataHandler;
         }
         else //For now we can not handle more transports
         {
             //Signal an error by returning NULL.
-            participant->getErrorService()->report(&BasicError("ReceiveDataHandlerFactory", "getReceiveDataHandler", "Creation of ReceiveDataHandler failed. Topic = " + top.getName()));
+            participant->reportError(&BasicError("ReceiveDataHandlerFactory", "getReceiveDataHandler", "Creation of ReceiveDataHandler failed. Topic = " + top.getName()));
             return NULL;
         }
-
-
     }
 
     void ReceiveDataHandlerFactory::releaseReceiveDataHandler(Topic& top, Participant* participant)
@@ -106,28 +101,26 @@ namespace ops
             {
                 //Time to mark this receiveDataHandler as garbage.
                 receiveDataHandlerInstances.erase(receiveDataHandlerInstances.find(key));
-                ///LA
-                topHandler->stop();
-                ///LA
-                garbageReceiveDataHandlers.push_back(topHandler);
-                if (top.getTransport() == Topic::TRANSPORT_MC)
-                {
-                    multicastReceiveDataHandlerInstances.erase(multicastReceiveDataHandlerInstances.find(top.getPort()));
-                }
-                else if (top.getTransport() == Topic::TRANSPORT_TCP)
-                {
-                    tcpReceiveDataHandlerInstances.erase(tcpReceiveDataHandlerInstances.find(top.getPort()));
-                }
 
+                topHandler->stop();
+
+                garbageReceiveDataHandlers.push_back(topHandler);
+                //if (top.getTransport() == Topic::TRANSPORT_MC)
+                //{
+                //    multicastReceiveDataHandlerInstances.erase(multicastReceiveDataHandlerInstances.find(top.getPort()));
+                //}
+                //else if (top.getTransport() == Topic::TRANSPORT_TCP)
+                //{
+                //    tcpReceiveDataHandlerInstances.erase(tcpReceiveDataHandlerInstances.find(top.getPort()));
+                //}
             }
         }
-
-    }//end releaseReceiveDataHandler
+    }
 
     void ReceiveDataHandlerFactory::cleanUpReceiveDataHandlers()
     {
         SafeLock lock(&garbageLock);
-        ///LA
+        
         for (int i = garbageReceiveDataHandlers.size() - 1; i >= 0; i--)
         {
             if (garbageReceiveDataHandlers[i]->numReservedMessages() == 0)
@@ -137,19 +130,13 @@ namespace ops
                 garbageReceiveDataHandlers.erase(iter);
             }
         }
-        ////for(unsigned int i = 0; i < garbageReceiveDataHandlers.size(); i++)
-        ////{
-        ////	garbageReceiveDataHandlers[i]->stop();
-        ////	delete garbageReceiveDataHandlers[i];
-        ////}
-        ////garbageReceiveDataHandlers.clear();
-        ///LA
     }
 
     ReceiveDataHandlerFactory::~ReceiveDataHandlerFactory()
     {
+		///TODO make sure udpReceiveDataHandler hasn't any reserved messages
+		udpReceiveDataHandler->stop();
         delete udpReceiveDataHandler;
-///not used        delete udpRec;
     }
 
 

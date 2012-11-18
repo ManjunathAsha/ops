@@ -21,14 +21,17 @@ namespace ops
             ParticipantInfoData* partInfo = dynamic_cast<ParticipantInfoData*> (sub->getMessage()->getData());
             if (partInfo)
             {
-                for (unsigned int i = 0; i < partInfo->subscribeTopics.size(); i++)
-                {
-                    //Do an add sink here
-                    if (partInfo->subscribeTopics[i].transport == Topic::TRANSPORT_UDP) //TODO: && participant->hasPublisherOn(partInfo->subscribeTopics[i].name))
-                    {
-                        ((McUdpSendDataHandler*) sendDataHandler)->addSink(partInfo->subscribeTopics[i].name, partInfo->ip, partInfo->mc_udp_port);
-                    }
-                }
+				// Is it on our domain?
+				if (partInfo->domain == participant->domainID) {
+	                for (unsigned int i = 0; i < partInfo->subscribeTopics.size(); i++)
+		            {
+			            //Do an add sink here
+				        if ( (partInfo->subscribeTopics[i].transport == Topic::TRANSPORT_UDP) && participant->hasPublisherOn(partInfo->subscribeTopics[i].name) )
+					    {
+						    ((McUdpSendDataHandler*) sendDataHandler)->addSink(partInfo->subscribeTopics[i].name, partInfo->ip, partInfo->mc_udp_port);
+						}
+					}
+				}
             }
             else
             {

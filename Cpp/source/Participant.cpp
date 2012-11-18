@@ -17,6 +17,7 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with OPS (Open Publish Subscribe).  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <strstream>
 #include "OPSTypeDefs.h"
 #include "Participant.h"
 #include "SingleThreadPool.h"
@@ -80,9 +81,12 @@ namespace ops
 		participantID(participantID_),
 		keepRunning(true),
 		aliveTimeout(1000),
+		ioService(NULL),
 		domain(NULL), 
 		objectFactory(NULL),
 		errorService(NULL), 
+		partInfoPub(NULL),
+		partInfoSub(NULL),
 		receiveDataHandlerFactory(NULL),
 		sendDataHandlerFactory(NULL),
 		aliveDeadlineTimer(NULL),
@@ -101,8 +105,13 @@ namespace ops
 		//Should trow?
 		OPSConfig* config;
 		if (configFile_ == "") {
+			// This gets a reference to a singleton instance and should NOT be deleted.
+			// It may be shared between several Participants.
 			config = OPSConfig::getConfig();
 		} else {
+			// This gets a reference to a unique instance and should eventually be deleted.
+			// Note however that the getDomain() call below returns a reference to an
+			// object internally in config.
 			config = OPSConfig::getConfig(configFile_);
 		}
 		if(!config)
@@ -111,21 +120,39 @@ namespace ops
 			throw ex;
 		}
 
-		//Get the domain from config.
+		//Get the domain from config. Note should not be deleted, owned by config.
 		domain = config->getDomain(domainID);
+///TODO borde väl kolla att domain fanns i config???
+
 		objectFactory = new OPSObjectFactoryImpl();
 		
+		// Initialize static data in partInfoData (ReceiveDataHandlerFactory() will set some more fields)
+		std::string Name;
+#ifdef _WIN32
+		char hname[1024];
+		hname[0] ='\0';
+		gethostname(hname, sizeof(hname));
+		std::ostrstream myStream;
+		myStream << hname << " (" << _getpid() << ")" << std::ends;
+		Name = myStream.str();
+#endif
+///TODO Linux
+		partInfoData.name = Name;
+        partInfoData.languageImplementation = "c++";
+        partInfoData.id = participantID;
+        partInfoData.domain = domainID;
+
 		//-----------Create delegate helper classes---
 		errorService = new ErrorService();
 		receiveDataHandlerFactory = new ReceiveDataHandlerFactory(this);
 		sendDataHandlerFactory = new SendDataHandlerFactory();
 		//--------------------------------------------
 
-		//------------Will be created when need------
+		//------------Will be created when needed------
 		partInfoPub = NULL;
 		//-------------------------------------------
 
-		//------------Create timer for peridic events-
+		//------------Create timer for periodic events-
 		aliveDeadlineTimer = DeadlineTimer::create(ioService);
 		aliveDeadlineTimer->addListener(this);
 		//--------------------------------------------
@@ -138,26 +165,37 @@ namespace ops
 		//--------------------------------------------
 	}
 
+	Participant::~Participant()
+	{
+		// First we request the IO Service to stop the processing (it's running on the threadpool).
+		// The stop() call will not block, it just signals that we want it to finish as soon as possible.
+		if (ioService) ioService->stop();
+
+		// Now we delete the threadpool, which will wait for the thread(s) to finish 
+		if (threadPool) delete threadPool;
+
+		// Now when the threads are gone, it's safe to delete the rest of our objects 
+		SafeLock lock(&serviceMutex);
+		if (aliveDeadlineTimer) delete aliveDeadlineTimer;
+		if (partInfoPub) delete partInfoPub;
+		if (partInfoSub) delete partInfoSub;
+		if (errorService) delete errorService;
+		if (receiveDataHandlerFactory) delete receiveDataHandlerFactory;
+		if (sendDataHandlerFactory) delete sendDataHandlerFactory;
+		if (objectFactory) delete objectFactory;
+		// All objects connected to this ioservice should now be deleted, so it should be safe to delete it
+		if (ioService) delete ioService;
+	}
+
 	ops::Topic Participant::createParticipantInfoTopic()
 	{
-		ops::Topic infoTopic("ops.bit.ParticipantInfoTopic", 9494, "ops.ParticipantInfoData", domain->getDomainAddress());
+///		ops::Topic infoTopic("ops.bit.ParticipantInfoTopic", 9494, "ops.ParticipantInfoData", domain->getDomainAddress());
+		ops::Topic infoTopic("ops.bit.ParticipantInfoTopic", domain->getMetaDataMcPort(), "ops.ParticipantInfoData", domain->getDomainAddress());
 		infoTopic.setDomainID(domainID);
 		infoTopic.setParticipantID(participantID);
 		infoTopic.setTransport(Topic::TRANSPORT_MC);
 		
 		return infoTopic;
-	}
-
-	Participant::~Participant()
-	{
-		SafeLock lock(&serviceMutex);
-		if (partInfoPub) delete partInfoPub;
-		if (aliveDeadlineTimer) aliveDeadlineTimer->cancel();
-		if (ioService) delete ioService;
-		if (errorService) delete errorService;
-		if (domain) delete domain;
-		if (receiveDataHandlerFactory) delete receiveDataHandlerFactory;
-		if (sendDataHandlerFactory) delete sendDataHandlerFactory;
 	}
 
 	void Participant::run()
@@ -187,15 +225,17 @@ namespace ops
 		SafeLock lock(&serviceMutex);
 		receiveDataHandlerFactory->cleanUpReceiveDataHandlers();
 		aliveDeadlineTimer->start(aliveTimeout);
-		//SafeLock lock2(&garbageLock);
-		if(partInfoPub == NULL)
+
+		// Create the meta data publisher if user hasn't disabled it for the domain.
+		// The meta data publisher is only necessary if we have topics using transport UDP.
+		if ( (partInfoPub == NULL) && (domain->getMetaDataMcPort() > 0) )
 		{
-
 			partInfoPub = new Publisher(createParticipantInfoTopic());
-
-			
 		}
-		partInfoPub->writeOPSObject(&partInfoData);
+		if (partInfoPub) {
+			SafeLock lock(&partInfoDataMutex);
+			partInfoPub->writeOPSObject(&partInfoData);
+		}
 
 	}
 
@@ -227,24 +267,42 @@ namespace ops
 		errorService->removeListener(listener);
 	}
 
-	
+	bool Participant::hasPublisherOn(std::string topicName)
+	{
+		///TODO
+		return true;
+	}
 
-	///By Singelton, one ReceiveDataHandler per Topic (Name)
 	ReceiveDataHandler* Participant::getReceiveDataHandler(Topic top)
 	{
-		return receiveDataHandlerFactory->getReceiveDataHandler(top, this);
+		ReceiveDataHandler* result = receiveDataHandlerFactory->getReceiveDataHandler(top, this);
+		if (result) {
+			SafeLock lock(&partInfoDataMutex);
+			//Need to add topic to partInfoData.subscribeTopics (TODO ref count if same topic??)
+            partInfoData.subscribeTopics.push_back(TopicInfoData(top));
+		}
+		return result;
 		
 	}//end getReceiveDataHandler
 
 	void Participant::releaseReceiveDataHandler(Topic top)
 	{
 		receiveDataHandlerFactory->releaseReceiveDataHandler(top, this);
+
+		SafeLock lock(&partInfoDataMutex);
+		// Remove topic from partInfoData.subscribeTopics (TODO the same topic, ref count?)
+		std::vector<TopicInfoData>::iterator it;
+		for (it = partInfoData.subscribeTopics.begin(); it != partInfoData.subscribeTopics.end(); it++) {
+			if (it->name == top.getName()) {
+				partInfoData.subscribeTopics.erase(it);
+				break;
+			}
+		}
 	}
 
 	//TODO: Delegate to factory class
 	SendDataHandler* Participant::getSendDataHandler(Topic top)
 	{
-
 		return sendDataHandlerFactory->getSendDataHandler(top, this);
 	}
 
@@ -252,8 +310,6 @@ namespace ops
 	void Participant::releaseSendDataHandler(Topic top)
 	{
 		sendDataHandlerFactory->releaseSendDataHandler(top, this);
-
-
 	}
 
 }
