@@ -69,47 +69,48 @@ namespace ops
 
         void handleConnect(const boost::system::error_code& error)
         {
-			InterlockedDecrement(&m_connectCounter);	// keep track of outstanding requests
-
-			if (!tryToConnect) return;
-
-			if (error)
-            {
-                //connect again
-                connected = false;
-                //std::cout << "connection failed tcp asynch" << std::endl;
+			if (tryToConnect) {
+				if (error)
+				{
+					//connect again
+					connected = false;
+					//std::cout << "connection failed tcp asynch" << std::endl;
 ///LA too much output        Participant::reportStaticError(&ops::BasicError("TCPClient", "handleConnect", "connection failed tcp asynch"));
-				InterlockedIncrement(&m_connectCounter);	// keep track of outstanding requests
-                sock->async_connect(*endpoint, boost::bind(&TCPClient::handleConnect, this, boost::asio::placeholders::error));
-            }
-            else
-            {
-                connected = true;
-                accumulatedSize = 0;
+					InterlockedIncrement(&m_connectCounter);	// keep track of outstanding requests
+					sock->async_connect(*endpoint, boost::bind(&TCPClient::handleConnect, this, boost::asio::placeholders::error));
+				}
+				else
+				{
+					connected = true;
+					accumulatedSize = 0;
 
-                boost::asio::socket_base::receive_buffer_size option(16000000);
-                boost::system::error_code ec;
-                ec = sock->set_option(option, ec);
-                sock->get_option(option);
-                if (ec != 0 || option.value() != 16000000)
-                {
-                    //std::cout << "Socket buffer size could not be set" << std::endl;
-                    Participant::reportStaticError(&ops::BasicError("TCPClient", "TCPClient", "Socket buffer size could not be set"));
-                }
+					boost::asio::socket_base::receive_buffer_size option(16000000);
+					boost::system::error_code ec;
+					ec = sock->set_option(option, ec);
+					sock->get_option(option);
+					if (ec != 0 || option.value() != 16000000)
+					{
+						//std::cout << "Socket buffer size could not be set" << std::endl;
+						Participant::reportStaticError(&ops::BasicError("TCPClient", "TCPClient", "Socket buffer size could not be set"));
+					}
 
-                //Disable Nagle algorithm
+					//Disable Nagle algorithm
 
-                boost::asio::ip::tcp::no_delay option2(true);
-                sock->set_option(option2);
-                //if(sockOptErr != 0)
-                //{
-                //std::cout << "Failed to disable Nagle algorithm." << std::endl;
-                //Participant::reportStaticError(&ops::BasicError("Failed to disable Nagle algorithm."));
-                //}
+					boost::asio::ip::tcp::no_delay option2(true);
+					sock->set_option(option2);
+					//if(sockOptErr != 0)
+					//{
+					//std::cout << "Failed to disable Nagle algorithm." << std::endl;
+					//Participant::reportStaticError(&ops::BasicError("Failed to disable Nagle algorithm."));
+					//}
 
-//                std::cout << "connected tcp asynch" << std::endl;
-                notifyNewEvent(BytesSizePair("", -5)); //Connection was down but has been reastablished.
-            }
+					//  std::cout << "connected tcp asynch" << std::endl;
+					notifyNewEvent(BytesSizePair("", -5)); //Connection was down but has been reastablished.
+				}
+			}
+			// We decrement the counter as the last thing in the callback, so we don't access the object any more 
+			// in case the destructor is called and waiting for us to be finished.
+			InterlockedDecrement(&m_connectCounter);
         }
 
         virtual ~TCPClient()
@@ -144,90 +145,92 @@ namespace ops
 
         void handle_receive_sizeInfo(const boost::system::error_code& error, size_t nrBytesReceived)
         {
-			InterlockedDecrement(&m_receiveCounter);	// keep track of outstanding requests
-
 			if (!connected) {
                 notifyNewEvent(BytesSizePair("", -2));
-                return;
-            }
 
-			bool errorDetected = false;
+			} else {
+				bool errorDetected = false;
 
-            if (!error) {
-                accumulatedSize += nrBytesReceived;
-                if (accumulatedSize < 22)// we have not gotten the size pack yet
-                {
-					InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
-                    sock->async_receive(
-                            boost::asio::buffer(data + accumulatedSize, 22 - accumulatedSize),
-                            boost::bind(&TCPClient::handle_receive_sizeInfo, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-                }
-                else // We are ready to receive the main data package
-                {
-                    accumulatedSize = 0;
-					// Get size of data packet from the received size packet
-					int sizeInfo = *((int*) (data + 18));
-					if (sizeInfo > max_length) {
-						// This is an error, we are not able to receive more than max_length bytes (the buffer size)
-						errorDetected = true;
-					} else {
-		                max_length = sizeInfo;
+				if (!error) {
+					accumulatedSize += nrBytesReceived;
+					if (accumulatedSize < 22)// we have not gotten the size pack yet
+					{
 						InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
-				        sock->async_receive(
-					            boost::asio::buffer(data, max_length),
-						        boost::bind(&TCPClient::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+						sock->async_receive(
+								boost::asio::buffer(data + accumulatedSize, 22 - accumulatedSize),
+								boost::bind(&TCPClient::handle_receive_sizeInfo, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 					}
-                }
-            } else {
-				errorDetected = true;
+					else // We are ready to receive the main data package
+					{
+						accumulatedSize = 0;
+						// Get size of data packet from the received size packet
+						int sizeInfo = *((int*) (data + 18));
+						if (sizeInfo > max_length) {
+							// This is an error, we are not able to receive more than max_length bytes (the buffer size)
+							errorDetected = true;
+						} else {
+							max_length = sizeInfo;
+							InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
+							sock->async_receive(
+									boost::asio::buffer(data, max_length),
+									boost::bind(&TCPClient::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+						}
+					}
+				} else {
+					errorDetected = true;
+				}
+
+				if (errorDetected) {
+					Participant::reportStaticError(&ops::BasicError("TCPClient", "handle_receive_sizeInfo", "Error in receive."));
+					notifyNewEvent(BytesSizePair("", -1));
+
+					//Close the socket and try to connect again
+					connected = false;
+					sock->close();
+					InterlockedIncrement(&m_connectCounter);	// keep track of outstanding requests
+					sock->async_connect(*endpoint, boost::bind(&TCPClient::handleConnect, this, boost::asio::placeholders::error));
+				}
 			}
-
-			if (errorDetected) {
-                Participant::reportStaticError(&ops::BasicError("TCPClient", "handle_receive_sizeInfo", "Error in receive."));
-                notifyNewEvent(BytesSizePair("", -1));
-
-                //Close the socket and try to connect again
-                connected = false;
-                sock->close();
-				InterlockedIncrement(&m_connectCounter);	// keep track of outstanding requests
-                sock->async_connect(*endpoint, boost::bind(&TCPClient::handleConnect, this, boost::asio::placeholders::error));
-            }
+			// We decrement the counter as the last thing in the callback, so we don't access the object any more 
+			// in case the destructor is called and waiting for us to be finished.
+			InterlockedDecrement(&m_receiveCounter);
         }
 
         void handle_receive_from(const boost::system::error_code& error, size_t nrBytesReceived)
         {
-			InterlockedDecrement(&m_receiveCounter);	// keep track of outstanding requests
-
             if (!connected) {
                 notifyNewEvent(BytesSizePair("", -2));
-                return;
-            }
 
-            if (!error && nrBytesReceived > 0) {
-                accumulatedSize += nrBytesReceived;
-                if (accumulatedSize < max_length)// we have not gotten all bytes yet
-                {
-					InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
-                    sock->async_receive(
-                            boost::asio::buffer(data + accumulatedSize, max_length - accumulatedSize),
-                            boost::bind(&TCPClient::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-                }
-                else
-                {
-                    notifyNewEvent(BytesSizePair(data, accumulatedSize));
-                    accumulatedSize = 0;
-                }
-            } else {
-                //handleReadError(error);
-//                printf("Error \n");
-                notifyNewEvent(BytesSizePair("", -1));
+			} else {
+				if (!error && nrBytesReceived > 0) {
+					accumulatedSize += nrBytesReceived;
+					if (accumulatedSize < max_length)// we have not gotten all bytes yet
+					{
+						InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
+						sock->async_receive(
+								boost::asio::buffer(data + accumulatedSize, max_length - accumulatedSize),
+								boost::bind(&TCPClient::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+					}
+					else
+					{
+						notifyNewEvent(BytesSizePair(data, accumulatedSize));
+						accumulatedSize = 0;
+					}
+				} else {
+					//handleReadError(error);
+					//printf("Error \n");
+					notifyNewEvent(BytesSizePair("", -1));
 
-                //Close the socket and try to connect again
-                connected = false;
-                sock->close();
-				InterlockedIncrement(&m_connectCounter);	// keep track of outstanding requests
-                sock->async_connect(*endpoint, boost::bind(&TCPClient::handleConnect, this, boost::asio::placeholders::error));
-            }
+					//Close the socket and try to connect again
+					connected = false;
+					sock->close();
+					InterlockedIncrement(&m_connectCounter);	// keep track of outstanding requests
+					sock->async_connect(*endpoint, boost::bind(&TCPClient::handleConnect, this, boost::asio::placeholders::error));
+				}
+			}
+			// We decrement the counter as the last thing in the callback, so we don't access the object any more 
+			// in case the destructor is called and waiting for us to be finished.
+			InterlockedDecrement(&m_receiveCounter);
         }
 
     private:

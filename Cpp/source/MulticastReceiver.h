@@ -114,24 +114,22 @@ namespace ops
 				boost::bind(&MulticastReceiver::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 		}
 
-		void handle_receive_from(const boost::system::error_code& error,
-			size_t nrBytesReceived)
+		void handle_receive_from(const boost::system::error_code& error, size_t nrBytesReceived)
 		{
+			if (!cancelled) {
+				if (!error && nrBytesReceived > 0)
+				{
+					//printf("Data receivedm in multicast receiver\n");
+					handleReadOK(data, nrBytesReceived);
+				}
+				else
+				{
+					handleReadError(error);
+				}
+			}
+			// We decrement the counter as the last thing in the callback, so we don't access the object any more 
+			// in case the destructor is called and waiting for us to be finished.
 			InterlockedDecrement(&m_receiveCounter);	// keep track of outstanding requests
-
-			if(cancelled)
-			{
-				return;
-			}			
-			if (!error && nrBytesReceived > 0)
-			{
-				//printf("Data receivedm in multicast receiver\n");
-				handleReadOK(data, nrBytesReceived);
-			}
-			else
-			{
-				handleReadError(error);
-			}
 		}
 			
 		void handleReadOK(char* bytes_, int size)

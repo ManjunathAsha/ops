@@ -108,20 +108,20 @@ namespace ops
 
         void handle_receive_from(const boost::system::error_code& error, size_t nrBytesReceived)
         {
-			InterlockedDecrement(&m_receiveCounter);	// keep track of outstanding requests
-
-			if (cancelled)
+			if (!cancelled)
             {
-                return;
-            }
-            if (!error && nrBytesReceived > 0)
-            {
-                handleReadOK(data, nrBytesReceived);
-            }
-            else
-            {
-                handleReadError(error);
-            }
+	            if (!error && nrBytesReceived > 0)
+		        {
+			        handleReadOK(data, nrBytesReceived);
+				}
+	            else
+		        {
+			        handleReadError(error);
+				}
+			}
+			// We decrement the counter as the last thing in the callback, so we don't access the object any more 
+			// in case the destructor is called and waiting for us to be finished.
+			InterlockedDecrement(&m_receiveCounter);	
         }
 
         void handleReadOK(char* bytes_, int size)

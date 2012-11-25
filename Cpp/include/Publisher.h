@@ -30,6 +30,7 @@
 #include "TimeHelper.h"
 #include <string>
 #include "MemoryMap.h"
+#include "Participant.h"
 
 //#include "DataHeaderHelper.h"
 

@@ -45,7 +45,6 @@ namespace ops
         data = NULL;
 
         participant = Participant::getInstance(topic.getDomainID(), topic.getParticipantID());
-        //participant = topic.getParticipant();
         deadlineTimer = DeadlineTimer::create(participant->getIOService());
         
         newDataMutex = new boost::mutex();

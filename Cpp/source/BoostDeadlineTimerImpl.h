@@ -30,11 +30,12 @@ namespace ops
 {
 	class BoostDeadlineTimerImpl : public DeadlineTimer
 	{
-		bool isStarted;
 		boost::asio::deadline_timer deadlineTimer;
+		// Counter to keep track of our outstanding requests, that will result in callbacks to us
+		volatile LONG m_reqCounter;
 	public:
 		BoostDeadlineTimerImpl(boost::asio::io_service* boostIOService) 
-			: isStarted(false),
+			: m_reqCounter(0),
 			deadlineTimer(*boostIOService)
 		{
 
@@ -52,6 +53,7 @@ namespace ops
 			//	{
 			//std::cout << "expired" << std::endl;
 			deadlineTimer.cancel();
+			InterlockedIncrement(&m_reqCounter);
 			deadlineTimer.expires_from_now(boost::posix_time::milliseconds(timeout));
 			deadlineTimer.async_wait(boost::bind(&BoostDeadlineTimerImpl::asynchHandleDeadlineTimeout, this, boost::asio::placeholders::error));
 			/*
@@ -73,15 +75,22 @@ namespace ops
 			{
 				// Timer was not cancelled, take necessary action.
 				notifyNewEvent(0);
-				isStarted = false;
 			}
-
-
-
+			// We decrement the counter as the last thing in the callback, so we don't access the object any more 
+			// in case the destructor is called and waiting for us to be finished.
+			InterlockedDecrement(&m_reqCounter);
 		}
 		~BoostDeadlineTimerImpl()
 		{
+			cancel();
 
+			/// We must handle asynchronous callbacks that haven't finished yet.
+			/// This approach works, but the recommended boost way is to use a shared pointer to the instance object
+			/// between the "normal" code and the callbacks, so the callbacks can check if the object exists.
+			while (m_reqCounter) {
+				cancel();
+				Sleep(1);
+			}
 		}
 	};
 }
