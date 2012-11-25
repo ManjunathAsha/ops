@@ -35,11 +35,9 @@
 #include "ErrorService.h"
 #include "Publisher.h"
 #include "ParticipantInfoData.h"
-#include "Receiver.h"
 #include "ParticipantInfoDataListener.h"
 #include "SendDataHandler.h"
 
-//
 
 
 namespace ops
@@ -64,6 +62,8 @@ namespace ops
 		static Participant* getInstance(std::string domainID);
 		static Participant* getInstance(std::string domainID, std::string participantID);
 		static Participant* getInstance(std::string domainID, std::string participantID, std::string configFile);
+		
+		//Report an error via all participants ErrorServices
 		static void reportStaticError(Error* err);
 
 		//Create a Topic for subscribing or publishing on ParticipantInfoData
@@ -77,7 +77,7 @@ namespace ops
 
 		void run();
 
-		//Make this participant report an Error, which will be delivered to all 
+		//Make this participant report an Error, which will be delivered to all ErrorSErvice listeners
 		void reportError(Error* err);
 
 		///Deadline listener callback
@@ -122,6 +122,9 @@ namespace ops
 
 		///Constructor is private instance are aquired through getInstance()
 		Participant(std::string domainID_, std::string participantID_, std::string configFile_);
+
+		///Remove this instance from the static instance map
+		void RemoveInstance();
 
 		///The IOService used for this participant, it handles kommunikation and timers for all receivers, subsribers and meber timers of this Participant.
 		IOService* ioService;

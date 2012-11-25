@@ -21,16 +21,16 @@
 #include "OPSTypeDefs.h"
 #include "Participant.h"
 #include "SingleThreadPool.h"
-#include "MultiThreadPool.h"
+//#include "MultiThreadPool.h"
 #include "ReceiveDataHandler.h"
 #include "ReceiveDataHandlerFactory.h"
 #include "SendDataHandlerFactory.h"
 #include "OPSObjectFactoryImpl.h"
-#include "UDPReceiver.h"
-#include "BasicError.h"
-#include "McUdpSendDataHandler.h"
-#include "McSendDataHandler.h"
-#include "TCPSendDataHandler.h"
+//#include "UDPReceiver.h"
+//#include "BasicError.h"
+//#include "McUdpSendDataHandler.h"
+//#include "McSendDataHandler.h"
+//#include "TCPSendDataHandler.h"
 #include "CommException.h"
 //#include "ParticipantInfoDataSubscriber.h"
 
@@ -75,6 +75,14 @@ namespace ops
 		}
 		return instances[participantID];
 	}
+
+	///Remove this instance from the static instance map
+	void Participant::RemoveInstance()
+	{
+		SafeLock lock(&creationMutex);
+		instances.erase(participantID);		
+	}
+
 
 	Participant::Participant(std::string domainID_, std::string participantID_, std::string configFile_):
 		domainID(domainID_), 
@@ -148,9 +156,9 @@ namespace ops
 		sendDataHandlerFactory = new SendDataHandlerFactory();
 		//--------------------------------------------
 
-		//------------Will be created when needed------
-		partInfoPub = NULL;
-		//-------------------------------------------
+///		//------------Will be created when needed------
+///		partInfoPub = NULL;
+///		//-------------------------------------------
 
 		//------------Create timer for periodic events-
 		aliveDeadlineTimer = DeadlineTimer::create(ioService);
@@ -167,22 +175,63 @@ namespace ops
 
 	Participant::~Participant()
 	{
-		// First we request the IO Service to stop the processing (it's running on the threadpool).
+		// We assume that the user has deleted all publishers and subscribers connected to this Participant.
+		// We also assume that the user has cancelled eventual deadlinetimers etc. connected to the ioService.
+		// We also assume that the user has unreserved() all messages that he has reserved().
+
+		// Remove this instance from the static instance map
+		RemoveInstance();
+
+		{
+			SafeLock lock(&serviceMutex);
+		
+			// Indicate that shutdown is in progress
+			keepRunning = false;
+
+			// We have indicated shutdown in progress. Delete the partInfoData Publisher.
+			// Note that this uses our sendDataHandlerFactory.
+			if (partInfoPub) delete partInfoPub;
+			partInfoPub = NULL;
+		}
+
+		// Stop and delete the subscriber for partInfoData. This requires ioService to be running.
+		// Note that this uses our receiveDataHandlerFactory.
+		if (partInfoSub) delete partInfoSub;
+		partInfoSub = NULL;
+
+		// Now delete our send factory (TODO it does not cleanup correctly yet)
+		if (sendDataHandlerFactory) delete sendDataHandlerFactory;
+		sendDataHandlerFactory = NULL;
+
+		// Our timer is required for ReceiveDataHandlers to be cleaned up so it shouldn't be stopped 
+		// before receiveDataHandlerFactory is finished.
+		// Wait until receiveDataHandlerFactory has no more cleanup to do
+		while (!receiveDataHandlerFactory->cleanUpDone()) {
+			Sleep(1);
+		}
+
+		// Now stop and delete our timer (NOTE requires ioService to be running).
+		// If the timer is in the callback, the delete will wait for it to finish and then the object is deleted.
+		if (aliveDeadlineTimer) delete aliveDeadlineTimer; 
+		aliveDeadlineTimer = NULL;
+
+		// Now time to delete our rceive factory
+		if (receiveDataHandlerFactory) delete receiveDataHandlerFactory;
+		receiveDataHandlerFactory = NULL;
+
+		// There should now not be anything left requiring the ioService to be running.
+
+		// Then we request the IO Service to stop the processing (it's running on the threadpool).
 		// The stop() call will not block, it just signals that we want it to finish as soon as possible.
 		if (ioService) ioService->stop();
 
 		// Now we delete the threadpool, which will wait for the thread(s) to finish 
 		if (threadPool) delete threadPool;
+		threadPool = NULL;
 
 		// Now when the threads are gone, it's safe to delete the rest of our objects 
-		SafeLock lock(&serviceMutex);
-		if (aliveDeadlineTimer) delete aliveDeadlineTimer;
-		if (partInfoPub) delete partInfoPub;
-		if (partInfoSub) delete partInfoSub;
-		if (errorService) delete errorService;
-		if (receiveDataHandlerFactory) delete receiveDataHandlerFactory;
-		if (sendDataHandlerFactory) delete sendDataHandlerFactory;
 		if (objectFactory) delete objectFactory;
+		if (errorService) delete errorService;
 		// All objects connected to this ioservice should now be deleted, so it should be safe to delete it
 		if (ioService) delete ioService;
 	}
@@ -198,17 +247,13 @@ namespace ops
 		return infoTopic;
 	}
 
-	void Participant::run()
-	{
-		aliveDeadlineTimer->start(aliveTimeout);
-		ioService->run();	
-	}
-
+	//Report an error via the participants ErrorService
 	void Participant::reportError(Error* err)
 	{
 		errorService->report(err);
 	}
 
+	//Report an error via all participants ErrorServices
 	void Participant::reportStaticError(Error* err)
 	{
 		std::map<std::string, Participant*>::iterator it = instances.begin();
@@ -219,24 +264,35 @@ namespace ops
 		}
 	}
 
-	
+	// This will be called by our threadpool (started in the constructor())
+	void Participant::run()
+	{
+		// Start our timer. Calls onNewEvent(Notifier<int>* sender, int message) on timeout
+		aliveDeadlineTimer->start(aliveTimeout);
+		ioService->run();	
+	}
+
+	// Called on aliveDeadlineTimer timeouts
 	void Participant::onNewEvent(Notifier<int>* sender, int message)
 	{
 		SafeLock lock(&serviceMutex);
 		receiveDataHandlerFactory->cleanUpReceiveDataHandlers();
+
+		if (keepRunning) {
+			// Create the meta data publisher if user hasn't disabled it for the domain.
+			// The meta data publisher is only necessary if we have topics using transport UDP.
+			if ( (partInfoPub == NULL) && (domain->getMetaDataMcPort() > 0) )
+			{
+				partInfoPub = new Publisher(createParticipantInfoTopic());
+			}
+			if (partInfoPub) {
+				SafeLock lock(&partInfoDataMutex);
+				partInfoPub->writeOPSObject(&partInfoData);
+			}
+		}
+
+		// Start a new timeout
 		aliveDeadlineTimer->start(aliveTimeout);
-
-		// Create the meta data publisher if user hasn't disabled it for the domain.
-		// The meta data publisher is only necessary if we have topics using transport UDP.
-		if ( (partInfoPub == NULL) && (domain->getMetaDataMcPort() > 0) )
-		{
-			partInfoPub = new Publisher(createParticipantInfoTopic());
-		}
-		if (partInfoPub) {
-			SafeLock lock(&partInfoDataMutex);
-			partInfoPub->writeOPSObject(&partInfoData);
-		}
-
 	}
 
 	void Participant::addTypeSupport(ops::SerializableFactory* typeSupport)
@@ -255,13 +311,13 @@ namespace ops
 		return topic;
 	}
 
-	///Deprecated, use addErrorListener instead. Add a listener for OPS core reported Errors
+	///Deprecated, use getErrorService()->addListener instead. Add a listener for OPS core reported Errors
 	void Participant::addListener(Listener<Error*>* listener)
 	{
 		errorService->addListener(listener);
-		
 	}
-	///Deprecated, use removeErrorListener instead. Remove a listener for OPS core reported Errors
+
+	///Deprecated, use getErrorService()->removeListener instead. Remove a listener for OPS core reported Errors
 	void Participant::removeListener(Listener<Error*>* listener)
 	{
 		errorService->removeListener(listener);
@@ -283,7 +339,7 @@ namespace ops
 		}
 		return result;
 		
-	}//end getReceiveDataHandler
+	}
 
 	void Participant::releaseReceiveDataHandler(Topic top)
 	{
