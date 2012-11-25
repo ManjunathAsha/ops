@@ -32,6 +32,7 @@ namespace ops
         ReceiveDataHandler* getReceiveDataHandler(Topic& top, Participant* participant);
         void cleanUpReceiveDataHandlers();
         void releaseReceiveDataHandler(Topic& top, Participant* participant);
+		bool cleanUpDone();
         ~ReceiveDataHandlerFactory();
 
     };

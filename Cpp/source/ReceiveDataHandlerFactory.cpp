@@ -132,6 +132,12 @@ namespace ops
         }
     }
 
+	bool ReceiveDataHandlerFactory::cleanUpDone()
+	{
+        SafeLock lock(&garbageLock);
+		return garbageReceiveDataHandlers.size() == 0;
+	}
+
     ReceiveDataHandlerFactory::~ReceiveDataHandlerFactory()
     {
 		///TODO make sure udpReceiveDataHandler hasn't any reserved messages
