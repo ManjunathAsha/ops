@@ -92,6 +92,10 @@ namespace ops
 		{
 			return ioService;
 		}
+		OPSConfig* getConfig()
+		{
+			return config;
+		}
 		
 		ErrorService* getErrorService()
 		{
@@ -128,6 +132,7 @@ namespace ops
 
 		///The IOService used for this participant, it handles kommunikation and timers for all receivers, subsribers and meber timers of this Participant.
 		IOService* ioService;
+		OPSConfig* config;
 
 		///The ErrorService
 		ErrorService* errorService;

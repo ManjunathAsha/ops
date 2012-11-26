@@ -26,13 +26,7 @@
 #include "ReceiveDataHandlerFactory.h"
 #include "SendDataHandlerFactory.h"
 #include "OPSObjectFactoryImpl.h"
-//#include "UDPReceiver.h"
-//#include "BasicError.h"
-//#include "McUdpSendDataHandler.h"
-//#include "McSendDataHandler.h"
-//#include "TCPSendDataHandler.h"
 #include "CommException.h"
-//#include "ParticipantInfoDataSubscriber.h"
 
 
 namespace ops
@@ -89,6 +83,7 @@ namespace ops
 		participantID(participantID_),
 		keepRunning(true),
 		aliveTimeout(1000),
+		config(NULL),
 		ioService(NULL),
 		domain(NULL), 
 		objectFactory(NULL),
@@ -111,7 +106,6 @@ namespace ops
 		}
 
 		//Should trow?
-		OPSConfig* config;
 		if (configFile_ == "") {
 			// This gets a reference to a singleton instance and should NOT be deleted.
 			// It may be shared between several Participants.
