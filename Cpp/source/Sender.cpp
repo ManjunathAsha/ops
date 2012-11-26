@@ -36,7 +36,7 @@ namespace ops
         return new UDPSender(localInterface, ttl, outSocketBufferSize, false);
     }
 
-    Sender* Sender::createTCPServer(std::string ip, int port, IOService* ioService)
+    Sender* Sender::createTCPServer(std::string ip, int port, IOService* ioService, __int64 outSocketBufferSize)
     {
 		///LA Can't have a static storage of TCPServers with only port as key,
 		/// this will not work if the same port is used on two different IP addresses.
@@ -53,7 +53,7 @@ namespace ops
         //}
         //return tcpSenderInstances[port];
 
-		return new TCPServer(ip, port, ioService);
+		return new TCPServer(ip, port, ioService, outSocketBufferSize);
     }
 
 

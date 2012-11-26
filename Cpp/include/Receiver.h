@@ -35,8 +35,8 @@ namespace ops
 		virtual ~Receiver() {}
 
 		static Receiver* create(std::string ip, int bindPort, IOService* ioService, std::string localInterface = "0.0.0.0", __int64 inSocketBufferSize = 16000000);
-		static Receiver* createTCPClient(std::string ip, int port, IOService* ioService);
-		static Receiver* createUDPReceiver(int port, IOService* ioService);
+		static Receiver* createTCPClient(std::string ip, int port, IOService* ioService, __int64 inSocketBufferSize = 16000000);
+		static Receiver* createUDPReceiver(int port, IOService* ioService,  std::string localInterface = "0.0.0.0", __int64 inSocketBufferSize = 16000000);
 		
 		//void setReceiveBuffer(char* bytes, int bufSize);
 		virtual void asynchWait(char* bytes, int size) = 0;

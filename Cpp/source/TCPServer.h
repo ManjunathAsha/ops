@@ -48,8 +48,10 @@ namespace ops
 	class TCPServer : public Sender
     {
     public:
-		TCPServer(std::string serverIP, int serverPort, IOService* ioServ) : acceptor(NULL), sock(NULL), connected(false), canceled(false)
+		TCPServer(std::string serverIP, int serverPort, IOService* ioServ, __int64 outSocketBufferSize = 16000000) : 
+			acceptor(NULL), sock(NULL), connected(false), canceled(false)
 		{
+			this->outSocketBufferSize = outSocketBufferSize;
 			ioService = ((BoostIOServiceImpl*)ioServ)->boostIOService;//((BoostIOServiceImpl*)Participant::getIOService())->boostIOService;
 			//boost::asio::ip::address ipAddr(boost::asio::ip::address_v4::from_string(serverIP));
 			endpoint = new boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), serverPort);
@@ -140,14 +142,16 @@ namespace ops
 
 			if(!error)
 			{
-				boost::asio::socket_base::send_buffer_size option(16000000);
-				boost::system::error_code ec;
-				ec = sock->set_option(option, ec);
-				sock->get_option(option);
-				if(ec != 0 || option.value() != 16000000)
-				{
-					//std::cout << "Socket buffer size could not be set" << std::endl;
-					Participant::reportStaticError(&ops::BasicError("TCPServer", "TCPServer", "Socket buffer size could not be set"));
+				if (outSocketBufferSize > 0) {
+					boost::asio::socket_base::send_buffer_size option(outSocketBufferSize);
+					boost::system::error_code ec;
+					ec = sock->set_option(option, ec);
+					sock->get_option(option);
+					if(ec != 0 || option.value() != outSocketBufferSize)
+					{
+						//std::cout << "Socket buffer size could not be set" << std::endl;
+						Participant::reportStaticError(&ops::BasicError("TCPServer", "TCPServer", "Socket buffer size could not be set"));
+					}
 				}
 //				std::cout << "accept ok" << std::endl;
 				connectedSockets.push_back(sock);
@@ -164,6 +168,7 @@ namespace ops
 
 		int port;
 		std::string ipAddress;
+		__int64 outSocketBufferSize;
 		boost::asio::ip::tcp::endpoint* endpoint;		//<-- The local port to bind to.
         boost::asio::ip::tcp::socket* sock;				//<-- The socket that handles next accept.
         

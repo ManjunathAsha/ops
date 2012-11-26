@@ -29,13 +29,13 @@ namespace ops
 	{
 		return new MulticastReceiver(ip, bindPort, ioService, localInterface, inSocketBufferSize);
 	}
-	Receiver* Receiver::createTCPClient(std::string ip, int port, IOService* ioService)
+	Receiver* Receiver::createTCPClient(std::string ip, int port, IOService* ioService, __int64 inSocketBufferSize)
 	{
-		return new TCPClient(ip, port, ioService);
+		return new TCPClient(ip, port, ioService, inSocketBufferSize);
 	}
-	Receiver* Receiver::createUDPReceiver(int port, IOService* ioService)
+	Receiver* Receiver::createUDPReceiver(int port, IOService* ioService, std::string localInterface, __int64 inSocketBufferSize)
 	{
-		return new UDPReceiver(port, ioService);
+		return new UDPReceiver(port, ioService, localInterface, inSocketBufferSize);
 	}
 
 }

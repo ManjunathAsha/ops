@@ -18,6 +18,7 @@ namespace ops
         Topic topic("__", 0, "__", "__"); //TODO: this is just a dummy construction, we should inject receiver int ReceiveDataHandler instead.
         topic.setParticipantID(participant->participantID);
         topic.setTransport(Topic::TRANSPORT_UDP);
+		topic.setInSocketBufferSize(participant->getDomain()->getInSocketBufferSize());	/// Since this isn't a topic from the config file (use the domains size)
         udpReceiveDataHandler = new ReceiveDataHandler(topic, participant);
         //--------------------------------------------
 

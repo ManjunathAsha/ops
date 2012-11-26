@@ -46,7 +46,10 @@ namespace ops
 		{
 			if(udpSendDataHandler == NULL)
 			{
-				udpSendDataHandler = new McUdpSendDataHandler();
+				// We have only one sender for all topics, so use the domain value for buffer size
+				udpSendDataHandler = new McUdpSendDataHandler(participant->getDomain()->getLocalInterface(), 
+															  1,								//TODO: make ttl configurable.
+															  participant->getDomain()->getOutSocketBufferSize()); 
 
 				// Setup a listener on the participant info data published by participants on our domain.
 				// We use the information for topics with UDP as transport, to know the destination for UDP sends

@@ -41,12 +41,14 @@ namespace ops
     {
     public:
 
-        TCPClient(std::string serverIP, int serverPort, IOService* ioServ) : connected(false), tryToConnect(false), accumulatedSize(0),
+        TCPClient(std::string serverIP, int serverPort, IOService* ioServ, __int64 inSocketBufferSizent = 16000000) : 
+			connected(false), tryToConnect(false), accumulatedSize(0),
 			m_connectCounter(0), m_receiveCounter(0)
         {
             boost::asio::io_service* ioService = ((BoostIOServiceImpl*) ioServ)->boostIOService; //((BoostIOServiceImpl*)Participant::getIOService())->boostIOService;
             boost::asio::ip::address ipAddr(boost::asio::ip::address_v4::from_string(serverIP));
             endpoint = new boost::asio::ip::tcp::endpoint(ipAddr, serverPort);
+			this->inSocketBufferSizent = inSocketBufferSizent;
 
             sock = new boost::asio::ip::tcp::socket(*ioService);
         }
@@ -84,14 +86,17 @@ namespace ops
 					connected = true;
 					accumulatedSize = 0;
 
-					boost::asio::socket_base::receive_buffer_size option(16000000);
-					boost::system::error_code ec;
-					ec = sock->set_option(option, ec);
-					sock->get_option(option);
-					if (ec != 0 || option.value() != 16000000)
+					if(inSocketBufferSizent > 0)
 					{
-						//std::cout << "Socket buffer size could not be set" << std::endl;
-						Participant::reportStaticError(&ops::BasicError("TCPClient", "TCPClient", "Socket buffer size could not be set"));
+						boost::asio::socket_base::receive_buffer_size option(inSocketBufferSizent);
+						boost::system::error_code ec;
+						ec = sock->set_option(option, ec);
+						sock->get_option(option);
+						if (ec != 0 || option.value() != inSocketBufferSizent)
+						{
+							//std::cout << "Socket buffer size could not be set" << std::endl;
+							Participant::reportStaticError(&ops::BasicError("TCPClient", "TCPClient", "Socket buffer size could not be set"));
+						}
 					}
 
 					//Disable Nagle algorithm
@@ -236,6 +241,7 @@ namespace ops
     private:
         int port;
         std::string ipaddress;
+		__int64 inSocketBufferSizent;
         boost::asio::ip::tcp::socket* sock;
         boost::asio::ip::tcp::endpoint* endpoint;
 

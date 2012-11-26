@@ -38,7 +38,7 @@ namespace ops
         TCPSendDataHandler(Topic& topic, IOService* ioService)
         {
 
-            sender = Sender::createTCPServer(topic.getDomainAddress(), topic.getPort(), ioService);
+			sender = Sender::createTCPServer(topic.getDomainAddress(), topic.getPort(), ioService, topic.getOutSocketBufferSize());
         }
 
         bool sendData(char* buf, int bufSize, Topic& topic)

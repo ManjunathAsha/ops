@@ -28,11 +28,11 @@ namespace ops
         }
         else if (top.getTransport() == Topic::TRANSPORT_TCP)
         {
-            receiver = Receiver::createTCPClient(top.getDomainAddress(), top.getPort(), ioService);
+            receiver = Receiver::createTCPClient(top.getDomainAddress(), top.getPort(), ioService, top.getInSocketBufferSize());
         }
         else if (top.getTransport() == Topic::TRANSPORT_UDP)
         {
-            receiver = Receiver::createUDPReceiver(0, ioService);
+            receiver = Receiver::createUDPReceiver(0, ioService, mcDomain->getLocalInterface(), top.getInSocketBufferSize());
         }
         return receiver;
     }

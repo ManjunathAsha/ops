@@ -40,10 +40,10 @@ namespace ops
     {
     public:
 
-        McUdpSendDataHandler(/*Participant* part*/)
+        McUdpSendDataHandler(/*Participant* part*/ std::string localInterface, int ttl, __int64 outSocketBufferSize = 16000000)
         {
             //this->participant = part;
-            sender = Sender::createUDPSender();
+            sender = Sender::createUDPSender(localInterface, ttl, outSocketBufferSize);
         }
 
         bool sendData(char* buf, int bufSize, Topic& topic)
