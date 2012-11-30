@@ -126,6 +126,7 @@ namespace ops
 		domain = config->getDomain(domainID);
 ///TODO borde väl kolla att domain fanns i config???
 
+		//Create a factory instance for each participant
 		objectFactory = new OPSObjectFactoryImpl();
 		
 		// Initialize static data in partInfoData (ReceiveDataHandlerFactory() will set some more fields)
@@ -291,7 +292,6 @@ namespace ops
 
 	void Participant::addTypeSupport(ops::SerializableFactory* typeSupport)
 	{
-		//OPSObjectFactory::getInstance()->add(typeSupport);
 		objectFactory->add(typeSupport);
 	}
 

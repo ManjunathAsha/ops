@@ -86,7 +86,9 @@ namespace ops
 				}
 				catch(std::exception& e)
 				{
-					std::cout << "Socket closed, exception in TCPServer::sendTo():" << e.what() << std::endl;
+					std::stringstream ss;
+					ss << "Socket closed, exception in TCPServer::sendTo():" << e.what() << std::endl;
+					Participant::reportStaticError(&ops::BasicError("TCPServer", "TCPServer", ss.str()));
 					connectedSockets[i]->close();
 
 					std::vector<boost::asio::ip::tcp::socket*>::iterator it;

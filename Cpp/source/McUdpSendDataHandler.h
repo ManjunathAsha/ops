@@ -67,7 +67,7 @@ namespace ops
                 }
                 else //Remove it.
                 {
-					std::cout << topic.getName() << " removing " << it->second.getKey() << std::endl;
+					//std::cout << topic.getName() << " removing " << it->second.getKey() << std::endl;
                     sinksToDelete.push(it->second.getKey());
                 }
             }
@@ -108,7 +108,7 @@ namespace ops
 
                 topicSinkMap[topic] = newIpPortMap;
 
-                std::cout << topic << " added as new sink " << ipPort.getKey() << std::endl;
+                //std::cout << topic << " added as new sink " << ipPort.getKey() << std::endl;
 
                 return;
             }
@@ -120,7 +120,7 @@ namespace ops
 
                     //We already have a map of sinks for this topic lets just add the new sink to the map.
                     topicSinkMap[topic][ipPort.getKey()] = ipPort;
-                    std::cout << topic << " added to existing sink " << ipPort.getKey() << std::endl;
+                    //std::cout << topic << " added to existing sink " << ipPort.getKey() << std::endl;
 
                     return;
                 }
