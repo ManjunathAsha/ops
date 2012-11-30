@@ -69,6 +69,7 @@ namespace ops
             {
                 boost::asio::ip::address ipAddr(boost::asio::ip::address_v4::from_string(localInterface));
                 localEndpoint = new boost::asio::ip::udp::endpoint(ipAddr, bindPort);
+				ipaddress = localInterface;
             }
 
             sock = new boost::asio::ip::udp::socket(*ioService);
