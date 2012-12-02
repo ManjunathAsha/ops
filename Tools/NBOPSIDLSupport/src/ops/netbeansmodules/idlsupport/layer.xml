@@ -139,6 +139,9 @@
     </folder>
     <folder name="Menu">
         <file name="BuildProject_hidden"/>
+        <folder name="File">
+            <file name="Import_hidden"/>
+        </folder>
         <file name="Refactoring_hidden"/>
         <file name="RunProject_hidden"/>
         <folder name="Source">
@@ -146,6 +149,11 @@
                 <attr name="originalFile" stringvalue="Actions/Build/ops-netbeansmodules-idlsupport-GenerateCode.instance"/>
                 <attr name="position" intvalue="0"/>
             </file>
+        </folder>
+        <folder name="Tools">
+            <file name="I18N_hidden"/>
+            <file name="JavaPlatformsCustomizerAction.shadow_hidden"/>
+            <file name="org-netbeans-modules-apisupport-project-ui-platform-NbPlatformCustomizerAction.shadow_hidden"/>
         </folder>
         <folder name="Window">
             <file name="TopicToolAction.shadow">

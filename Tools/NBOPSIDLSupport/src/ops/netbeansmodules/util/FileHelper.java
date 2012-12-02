@@ -152,7 +152,15 @@ public class FileHelper
             r = f.getCanonicalFile();
             while (r != null)
             {
-                l.add(r.getName());
+                ///LA l.add(r.getName());
+                // returns "" for drive specifier, which don't work when we have different drives
+                String name = r.getName();
+                if (name.isEmpty()) {
+                    // Special case to handle the drive specifier
+                    name = r.getPath();
+                    name = name.replace("\\", "");
+                }
+                l.add(name);
                 r = r.getParentFile();
             }
         }
@@ -188,10 +196,14 @@ public class FileHelper
             j--;
         }
 
-        // for each remaining level in the home path, add a ..
-        for (; i >= 0; i--)
-        {
-            s += ".." + File.separator;
+        // If we didn't eliminate any parts above, we don't have any common
+        // parts, so can't add any ".."
+        if (i < (r.size() - 1)) {
+            // for each remaining level in the home path, add a ..
+            for (; i >= 0; i--)
+            {
+                s += ".." + File.separator;
+            }
         }
 
         // for each level in the file path, add the path

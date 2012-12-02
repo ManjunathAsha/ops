@@ -18,7 +18,7 @@ public class Property implements Serializable
     public String key = "";
     public String value = "";
 
-    Property(String k, String v)
+    public Property(String k, String v)
     {
         key = k;
         value = v;

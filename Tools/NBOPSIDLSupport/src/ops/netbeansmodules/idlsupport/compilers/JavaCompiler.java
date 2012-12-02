@@ -4,18 +4,21 @@
  * Created on den 12 november 2007, 15:39
  *
  * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
+ * and open the template in the editor. 
  */
 package ops.netbeansmodules.idlsupport.compilers;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.lang.ClassLoader;
 import java.util.List;
 import java.util.Vector;
 import javax.swing.JOptionPane;
 import ops.netbeansmodules.idlsupport.projectproperties.JarDependency;
 import ops.netbeansmodules.util.FileHelper;
+import org.openide.windows.InputOutput;
 import parsing.AbstractTemplateBasedIDLCompiler;
 import parsing.IDLClass;
 import parsing.IDLField;
@@ -64,7 +67,7 @@ public class JavaCompiler extends AbstractTemplateBasedIDLCompiler//implements I
                 }
 //            compileHelper(iDLClass);
             }
-            compileTypeSupport(idlClasses, extractProjectName(projectDirectory));
+            compileTypeSupport(idlClasses, extractProjectName(projectDirectory).replace(" ", "_"));
         }
         catch (IOException iOException)
         {
@@ -316,7 +319,15 @@ public class JavaCompiler extends AbstractTemplateBasedIDLCompiler//implements I
         {
             if (!field.getComment().equals(""))
             {
-                ret += tab(1) + "///" + field.getComment() + endl();
+                String comment = field.getComment();
+                int idx;
+                while ((idx = comment.indexOf('\n')) >= 0) {
+                  ret += tab(1) + "///" + comment.substring(0,idx).replace("/*", "").replace("*/", "") + endl();
+                  comment = comment.substring(idx+1);
+                }
+                ret += tab(1) + "///" + comment.replace("/*", "").replace("*/", "") + endl();
+//                ret += tab(1) + "///" + field.getComment().replace("/*", "").replace("*/", "") + endl();
+//                ret += tab(1) + "///" + field.getComment() + endl();
             }
             if (field.isArray())
             {
@@ -477,7 +488,7 @@ public class JavaCompiler extends AbstractTemplateBasedIDLCompiler//implements I
 
     }
 
-    public void buildAndJar(String projectDir) throws IOException, InterruptedException, IOException, IOException
+    public void buildAndJar(String projectDir, InputOutput io) throws IOException, InterruptedException, IOException, IOException
     {
         String jarPackString = null;
 
@@ -485,9 +496,13 @@ public class JavaCompiler extends AbstractTemplateBasedIDLCompiler//implements I
         String manifestJarDepString = "Class-Path: ";
         for (JarDependency jarDep : jarDependencies)
         {
-            jarDepString += "\"" + projectDir + "/" + jarDep.path + "\";";
-
-            File jarToBeCopied = new File(projectDir + "/" + jarDep.path + "");
+            File jarToBeCopied = new File(jarDep.path + "");
+            if (!jarToBeCopied.isAbsolute()) {
+                jarToBeCopied = new File(projectDir + "/" + jarDep.path + "");
+                jarDepString += "\"" + projectDir + "/" + jarDep.path + "\";";
+            } else {
+                jarDepString += "\"" + jarDep.path + "\";";
+            }
             File jarCopy = new File(projectDir + "/" + "Generated" + "/" + jarToBeCopied.getName());
             jarCopy.createNewFile();
             FileHelper.copyFile(jarToBeCopied, jarCopy);
@@ -503,29 +518,82 @@ public class JavaCompiler extends AbstractTemplateBasedIDLCompiler//implements I
         String manFilePath = projectDirectory.replace("\\", "/") + "/manifest_adds.ops_tmp";
         FileHelper.createAndWriteFile(manFilePath, manifestJarDepString);
 
-        String execString = "javac -cp " + jarDepString + "build/cluster/modules/ext/OPSJLib.jar;ops_idl_builder_nb/modules/ext/OPSJLib.jar;build/cluster/modules/ext/ConfigurationLib.jar;ops_idl_builder_nb/modules/ext/ConfigurationLib.jar" + " @" + "\"" + dinfoPath + "\"";
+        /// Try to find out the full path for the included OPS Jar files
+        String ExePath = "";
+        String SubPath = "";
+        try {
+          ExePath = JavaCompiler.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+          ExePath = java.net.URLDecoder.decode(ExePath, "UTF-8");
+          SubPath = "build/cluster/modules";       // When run'd from source tree
+          int idx = ExePath.indexOf(SubPath);
+          if (idx < 0) {
+              SubPath = "ops_idl_builder_nb/modules";    // When run'd from deploy tree/install directory
+              idx = ExePath.indexOf(SubPath);
+              if (idx < 0) {
+                  SubPath = "";
+                  ExePath = "";
+              } else {
+                  ExePath = ExePath.substring(0, idx);
+              }
+          } else {
+              ExePath = ExePath.substring(0, idx);
+          }
+          ExePath = ExePath.replaceFirst("file:/", "");
+        }
+        catch (Exception e) {
+            SubPath = "";
+            ExePath = "";
+        }
+        io.getOut().println("Debug: ExePath: " + ExePath);
+
+        // Add OPS libs to jarDepString
+        if (!SubPath.isEmpty()) {
+            jarDepString += "\"" + ExePath + SubPath + "/ext/OPSJLib.jar\";";
+            jarDepString += "\"" + ExePath + SubPath + "/ext/ConfigurationLib.jar\"";
+        } else {
+            io.getOut().println("ERROR: Can't find OPS files: 'OPSJLib.jar' & 'ConfigurationLib.jar'");
+        }
+
+        String classOutputDir = "\"" + projectDir + "/" + "Generated" + "/tmp\"";
+        classOutputDir = classOutputDir.replace("/", "\\");
+        
+        String execString = "javac -cp " + jarDepString +
+///                "\"" + ExePath + "build/cluster/modules/ext/OPSJLib.jar\";" +
+///                "\"" + ExePath + "ops_idl_builder_nb/modules/ext/OPSJLib.jar\";" +
+///                "\"" + ExePath + "build/cluster/modules/ext/ConfigurationLib.jar\";" +
+///                "\"" + ExePath + "ops_idl_builder_nb/modules/ext/ConfigurationLib.jar\"" +
+                " @" + "\"" + dinfoPath + "\"";
+
         String batFileText = ";";//"@echo off\n";
-        batFileText += "echo Building Java..." + "\n";
-        batFileText += execString + "\n";
+        batFileText += "echo Building Java..." + "\r\n";
+        batFileText += "javac -version\r\n";
+        batFileText += "mkdir " + classOutputDir + "\r\n";
+        batFileText += "cd " + classOutputDir + "\r\n";
+        batFileText += execString + "\r\n";
 
-        String projectName = projectDirectory.substring(0, projectDirectory.lastIndexOf("/Generated"));
-        projectName = projectDirectory.substring(projectName.lastIndexOf("/"), projectName.length());
+        String projDirUp = projectDirectory.substring(0, projectDirectory.lastIndexOf("/Generated"));
+        String projectName = projectDirectory.substring(projDirUp.lastIndexOf("/"), projDirUp.length());
 
 
-        jarPackString = "jar cfm \"" + FileHelper.unixSlashed(projectDirectory) + "/" + projectName + ".jar\" \"" + manFilePath + "\" -C \"" + FileHelper.unixSlashed(projectDirectory) + "Java" + "\" . ";
-        batFileText += jarPackString + "\n";
-        batFileText += "echo done." + "\n";
-        batFileText += "pause\n";
-        batFileText += "exit\n";
+        jarPackString = "jar cfm \"" + FileHelper.unixSlashed(projectDirectory) + "/" + 
+                projectName + ".jar\" \"" + manFilePath + "\" -C \"" +
+                FileHelper.unixSlashed(projectDirectory) + "Java" + "\" . ";
+        batFileText += jarPackString + "\r\n";
+        batFileText += "echo done." + "\r\n";
+        batFileText += "pause\r\n";
+        batFileText += "exit\r\n";
 //        batFileText += "del \"" + projectDirectory + "manifest_adds.ops_tmp\"\n";
 
         //Process p = Runtime.getRuntime().exec(jarPackString);
-        FileHelper.createAndWriteFile("java_build_script.bat", batFileText);
+        projDirUp = projDirUp.replace('/', '\\');
+
+        FileHelper.createAndWriteFile(projDirUp + "/java_build_script.bat", batFileText);
         //Process p = Runtime.getRuntime().exec("java_build_script.bat");
         //Thread.sleep((1000));
         //p.waitFor();
         Runtime rTime = Runtime.getRuntime();
-        Process process = rTime.exec("cmd /c start java_build_script.bat");
+        io.getOut().println("Info: cmd /c start /D \"" + projDirUp + "\" java_build_script.bat");
+        Process process = rTime.exec("cmd /c start /D \"" + projDirUp + "\" java_build_script.bat");
 
 //            InputStream p_in = process.getInputStream();
 //            OutputStream p_out = process.getOutputStream();
@@ -534,6 +602,26 @@ public class JavaCompiler extends AbstractTemplateBasedIDLCompiler//implements I
 //            p_in.close();
 //            p_out.close();
 //            p_err.close();
+
+        // --------------------------------------------------------------------
+        // Test code
+        // Write javac version number in output window
+        try {
+          ProcessBuilder pb = new ProcessBuilder("javac", "-version");
+          pb.redirectErrorStream(true);
+          Process p = pb.start();
+          InputStream inp = p.getInputStream();
+
+          int c;
+          while ((c = inp.read()) != -1) {
+            io.getOut().write(c);
+          }
+        }
+        catch (IOException e) {
+          io.getOut().println("Error: " + e.getMessage());
+        }
+        // --------------------------------------------------------------------
+
     }
 
     public void appendFileToBuild(List<String> file)

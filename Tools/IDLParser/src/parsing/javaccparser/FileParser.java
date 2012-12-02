@@ -32,7 +32,6 @@ public class FileParser implements IDLFileParser
 
             public void onEvent(String eventData, ParserEvent e)
             {
-
                 idlClass.setClassName(eventData);
                 pendingComment = "";
             }
@@ -112,7 +111,12 @@ public class FileParser implements IDLFileParser
 
             public void onEvent(String eventData, ParserEvent e)
             {
-                pendingComment = eventData;
+///                pendingComment = eventData;
+                if (pendingComment.isEmpty()) {
+                    pendingComment = eventData;
+                } else {
+                    pendingComment += "\n" + eventData;
+                }
             }
         });
 

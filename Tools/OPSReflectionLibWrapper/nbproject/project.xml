@@ -33,7 +33,6 @@
             </module-dependencies>
             <public-packages>
                 <package>opsreflection</package>
-                <package>testprogram</package>
             </public-packages>
             <class-path-extension>
                 <runtime-relative-path>ext/OPSReflectionLib.jar</runtime-relative-path>

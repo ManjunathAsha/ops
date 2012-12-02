@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Vector;
 import ops.OPSConfig;
 import ops.netbeansmodules.idlsupport.compilers.CppCompiler;
+import ops.netbeansmodules.idlsupport.compilers.CsCompiler;
 import ops.netbeansmodules.idlsupport.compilers.DebugProjectCompiler;
 import ops.netbeansmodules.idlsupport.compilers.JavaCompiler;
 import ops.netbeansmodules.idlsupport.compilers.JavaOPSConfigCompiler;
@@ -22,7 +23,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import parsing.IDLClass;
-
+import org.openide.windows.InputOutput;
 /**
  *
  * @author angr
@@ -32,6 +33,7 @@ public class ProjectIDLCompiler
 
     JavaCompiler javaCompiler = new JavaCompiler();
     JavaOPSConfigCompiler javaOPSConfigCompiler = new JavaOPSConfigCompiler();
+    CsCompiler csCompiler = new CsCompiler();
     CppCompiler cppCompiler = new CppCompiler();
     DebugProjectCompiler debugProjectCompiler = new DebugProjectCompiler();
     VisualStudio2008CppExampleCompiler cppExampleCompiler = new VisualStudio2008CppExampleCompiler();
@@ -66,11 +68,9 @@ public class ProjectIDLCompiler
         }
     }
 
-    public void compile(Vector<IDLClass> idlClasses)
+    public void compile(Vector<IDLClass> idlClasses, InputOutput io)
     {
         //Test plugins
-
-
 
         FileObject projectDirectory = project.getProjectDirectory();
         for (FileObject fileObject : projectDirectory.getChildren())
@@ -91,29 +91,57 @@ public class ProjectIDLCompiler
 
         if (project.getProperties().generateCpp)
         {
+            io.getOut().println("Generating C++...");
             cppCompiler.compileDataClasses(idlClasses, project.getProjectDirectory().getPath() + "/Generated/");
+            io.getOut().println("Done.");
+        }
+        if (project.getProperties().generateCS)
+        {
+            io.getOut().println("Generating C#...");
+            csCompiler.compileDataClasses(idlClasses, project.getProjectDirectory().getPath() + "/Generated/");
+            io.getOut().println("Done.");
+
+            if (project.getProperties().buildCS)
+            {
+                io.getOut().println("Building C#...");
+                try
+                {
+                    csCompiler.setDllDependencies(project.getProperties().csBuildDllDependencies);
+                    csCompiler.buildDll(project.getProjectDirectory().getPath(), io);
+                } catch (IOException ex)
+                {
+                    Exceptions.printStackTrace(ex);
+                } catch (InterruptedException ex)
+                {
+                    Exceptions.printStackTrace(ex);
+                }
+                io.getOut().println("Done.");
+            }
         }
         if (project.getProperties().generateJava)
         {
+            io.getOut().println("Generating Java...");
             javaCompiler.compileDataClasses(idlClasses, project.getProjectDirectory().getPath() + "/Generated/");
 
             OPSConfig opsConfig;
             try
             {
-                opsConfig = OPSConfig.getConfig(new File(project.getProjectDirectory().getPath() + "/" + project.getProperties().defaultOPSTopicConfigFile));
+                File cfgFile = new File(project.getProjectDirectory().getPath() + "/" + project.getProperties().defaultOPSTopicConfigFile);
+                if (cfgFile.exists()) {
+                    opsConfig = OPSConfig.getConfig( cfgFile );
 //                ArrayList<String> generatedFiles = javaOPSConfigCompiler.compileConfig(opsConfig, project.getProjectDirectory().getPath() + "/Generated/");
 //
 //                javaCompiler.appendFileToBuild(generatedFiles);
 
-                Collection<? extends OPSConfigCompiler> configCompilers = Lookup.getDefault().lookupAll(OPSConfigCompiler.class);
-                for (OPSConfigCompiler configCompiler : configCompilers)
-                {
-                    ArrayList<String> generatedFiles = configCompiler.compileConfig(opsConfig, project.getProjectDirectory().getPath() + "/Generated/");
-                    javaCompiler.appendFileToBuild(generatedFiles);
+                    Collection<? extends OPSConfigCompiler> configCompilers = Lookup.getDefault().lookupAll(OPSConfigCompiler.class);
+                    for (OPSConfigCompiler configCompiler : configCompilers)
+                    {
+                        ArrayList<String> generatedFiles = configCompiler.compileConfig(opsConfig, project.getProjectDirectory().getPath() + "/Generated/");
+                        javaCompiler.appendFileToBuild(generatedFiles);
+                    }
+                } else {
+                    io.getOut().println("Warn: Topic config file not found. Java Topic Config not generated.");
                 }
-
-
-
             } catch (IOException ex)
             {
                 ex.printStackTrace();
@@ -123,13 +151,15 @@ public class ProjectIDLCompiler
                 ex.printStackTrace();
                 Exceptions.printStackTrace(ex);
             }
+            io.getOut().println("Done.");
 
             if (project.getProperties().buildJava)
             {
+                io.getOut().println("Building Java...");
                 try
                 {
                     javaCompiler.setJarDependencies(project.getProperties().javaBuildJarDependencies);
-                    javaCompiler.buildAndJar(project.getProjectDirectory().getPath());
+                    javaCompiler.buildAndJar(project.getProjectDirectory().getPath(), io);
                 } catch (IOException ex)
                 {
                     Exceptions.printStackTrace(ex);
@@ -137,20 +167,22 @@ public class ProjectIDLCompiler
                 {
                     Exceptions.printStackTrace(ex);
                 }
+                io.getOut().println("Done.");
             }
-
-
-
 
         }
         if (project.getProperties().buildDebugProject)
         {
+            io.getOut().println("Generating Debug...");
             debugProjectCompiler.createDebugProjectFile(project.getProjectDirectory().getPath(), project.getProjectDirectory().getName(), project.getProperties());
+            io.getOut().println("Done.");
 
         }
         if (Boolean.parseBoolean(project.getProperties().getPropertyValue("vsExampleEnabled", "false")))
         {
+            io.getOut().println("Generating Visual C++ Examples...");
             cppExampleCompiler.compileVSCppExample(project.getProjectDirectory().getPath(), project.getProjectDirectory().getName(), project.getProperties());
+            io.getOut().println("Done.");
         }
 
 

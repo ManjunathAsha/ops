@@ -4,9 +4,12 @@
  */
 package ops.netbeansmodules.idlsupport;
 
+import configlib.XMLArchiverIn;
 import configlib.XMLArchiverOut;
+import configlib.exception.FormatException;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
@@ -25,7 +28,8 @@ import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.windows.IOProvider;
 import org.openide.windows.InputOutput;
-
+import ops.netbeansmodules.util.FileHelper;
+import ops.netbeansmodules.idlsupport.projectproperties.JarDependency;
 /**
  *
  * @author angr
@@ -37,27 +41,52 @@ public class OPSIDLProject implements Project
     public static final String TOPIC_CONFIG_DIR = "topicconfig";
     public static final String PROJECT_DIR = "opsproject";
     public static final String PROJECT_PROPFILE = "project.properties";
+    public static final String DEFAULT_PROPFILE = "opsidldefault.properties";
     private FileObject projectDir;
     private ProjectState state;
     LogicalViewProvider logicalView = new OPSIDLProjectLogicalView(this);
     ProjectIDLParser projectIDLParser = new ProjectIDLParser();
     ProjectIDLCompiler projectIDLCompiler = new ProjectIDLCompiler(this);
 
-    OPSProjectProperties properties = new OPSProjectProperties();
+    ///LA To be able to access properties from the default option dialog
+    public static OPSProjectProperties defaultProperties = createDefault();
+    
+    //
+    private OPSProjectProperties properties = new OPSProjectProperties();
 
     public OPSIDLProject(FileObject projectDir, ProjectState state)
     {
         this.projectDir = projectDir;
         this.state = state;
     }
-    public void save()
+
+    private static OPSProjectProperties createDefault()
+    {
+        OPSProjectProperties prop = new OPSProjectProperties();
+        try
+        {
+            File inFile = new File( System.getProperty("user.home") + "/" + DEFAULT_PROPFILE);
+            XMLArchiverIn archiver = new XMLArchiverIn(new FileInputStream(inFile));
+            archiver.add(OPSProjectProperties.getSerializableFactory());
+            prop = (OPSProjectProperties)archiver.inout("properties", prop);
+        }
+        catch (IOException ex)
+        {
+        }
+        catch (FormatException ex)
+        {
+        }
+        return prop;
+    }
+
+    public static void saveDefault()
     {
         try
         {
-            File outFile = new File(getProjectDirectory().getPath() + "/" + PROJECT_DIR + "/" + PROJECT_PROPFILE);
+            File outFile = new File( System.getProperty("user.home") + "/" + DEFAULT_PROPFILE);
             XMLArchiverOut archiver = new XMLArchiverOut(new FileOutputStream(outFile));
             archiver.setWriteTypes(false);
-            archiver.inout("properties", getProperties());
+            archiver.inout("properties", defaultProperties);
         }
         catch (IOException ex)
         {
@@ -65,11 +94,82 @@ public class OPSIDLProject implements Project
         }
     }
 
+    private void saveProp(OPSProjectProperties prop)
+    {
+        try
+        {
+            File outFile = new File(getProjectDirectory().getPath() + "/" + PROJECT_DIR + "/" + PROJECT_PROPFILE);
+            XMLArchiverOut archiver = new XMLArchiverOut(new FileOutputStream(outFile));
+            archiver.setWriteTypes(false);
+            archiver.inout("properties", prop);
+        }
+        catch (IOException ex)
+        {
+            Exceptions.printStackTrace(ex);
+        }
+    }
    
+    public void save()
+    {
+        saveProp(getProperties());
+    }
+
+    private void makeRelativePaths()
+    {
+        // Try to make any absolute file paths in properties, realtive
+        // to the project file
+        String currentDirectory = getProjectDirectory().getPath();
+        for (int index = 0; index < properties.javaBuildJarDependencies.size(); index++) {
+            File tmp = new File(properties.javaBuildJarDependencies.elementAt(index).path);
+            if (!tmp.isAbsolute()) continue;
+            properties.javaBuildJarDependencies.setElementAt(
+                new JarDependency(
+                    FileHelper.unixSlashed(
+                        FileHelper.getRelativePath(
+                            new File(currentDirectory),
+                            tmp))),
+                index);
+        }
+        for (int index = 0; index < properties.csBuildDllDependencies.size(); index++) {
+            File tmp = new File(properties.csBuildDllDependencies.elementAt(index).path);
+            if (!tmp.isAbsolute()) continue;
+            properties.csBuildDllDependencies.setElementAt(
+                new JarDependency(
+                    FileHelper.unixSlashed(
+                        FileHelper.getRelativePath(
+                            new File(currentDirectory),
+                            tmp))),
+                index);
+        }
+    }
+
+    public void setDefaultProperties()
+    {
+        saveProp(defaultProperties);
+
+        try
+        {
+            File inFile = new File(getProjectDirectory().getPath() + "/" + PROJECT_DIR + "/" + PROJECT_PROPFILE);
+            XMLArchiverIn archiver = new XMLArchiverIn(new FileInputStream(inFile));
+            archiver.add(OPSProjectProperties.getSerializableFactory());
+            properties = (OPSProjectProperties) archiver.inout("properties", properties);
+
+            // Try to make absolute file paths in default properties, realtive
+            // to the project file
+            makeRelativePaths();
+        }
+        catch (FormatException ex)
+        {
+        }
+        catch (IOException ex)
+        {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+
     FileObject getSourceFolder(boolean create)
     {
-        FileObject result =
-                projectDir.getFileObject(SRC_DIR);
+        FileObject result = projectDir.getFileObject(SRC_DIR);
 
         if (result == null && create)
         {
@@ -86,8 +186,8 @@ public class OPSIDLProject implements Project
 
     FileObject getTopicConfigFolder(boolean create)
     {
-        FileObject result =
-                projectDir.getFileObject(TOPIC_CONFIG_DIR);
+        FileObject result = projectDir.getFileObject(TOPIC_CONFIG_DIR);
+
         if (result == null && create)
         {
             try
@@ -106,12 +206,11 @@ public class OPSIDLProject implements Project
         return properties;
     }
 
-    
-
     public FileObject getProjectDirectory()
     {
         return projectDir;
     }
+
     private Lookup lkp;
 
     public Lookup getLookup()
@@ -170,13 +269,11 @@ public class OPSIDLProject implements Project
         }
 
     }
+    
     public void build()
     {
         
         try {
-
-            
-
             InputOutput io = IOProvider.getDefault().getIO("OPS Build - " + getName(), false);
             //io.getOut().reset();
             io.getOut().reset();
@@ -213,20 +310,18 @@ public class OPSIDLProject implements Project
             //InputOutput io = IOProvider.getDefault().getIO("OPS Build - " + getName(), false);
             io.select();
             io.getOut().println("Parsing successful.");
-            projectIDLCompiler.compile(projectIDLParser.getIdlClasses());
+            projectIDLCompiler.compile(projectIDLParser.getIdlClasses(), io);
         }
     }
 
     private Properties loadProperties()
     {
-        FileObject fob = projectDir.getFileObject(PROJECT_DIR +
-                "/" + PROJECT_PROPFILE);
+        FileObject fob = projectDir.getFileObject(PROJECT_DIR + "/" + PROJECT_PROPFILE);
         Properties properties = new NotifyProperties(state);
-        if (fob != null)
-        {
-            try
-            {
+        if (fob != null) {
+            try {
                 properties.load(fob.getInputStream());
+                makeRelativePaths();
             } catch (Exception e)
             {
                 Exceptions.printStackTrace(e);

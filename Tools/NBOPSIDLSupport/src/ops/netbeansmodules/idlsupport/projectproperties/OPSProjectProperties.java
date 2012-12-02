@@ -19,18 +19,20 @@ import java.util.Vector;
  */
 public class OPSProjectProperties implements Serializable
 {
-
     public boolean generateCpp = true;
     public boolean generateJava = true;
     public boolean buildJava = true;
+    public boolean generateCS = true;
+    public boolean buildCS = true;
     public boolean buildDebugProject = true;
     public String defaultOPSTopicConfigFile = "src/ops_config.xml";
     public Vector<JarDependency> javaBuildJarDependencies = new Vector<JarDependency>();
+    public Vector<JarDependency> csBuildDllDependencies = new Vector<JarDependency>();
     public boolean generateOPSConfigClass = false;
     public boolean opsConfigClassNamespace = false;
     public boolean generateOPSConfigXMLFileFromSourceComments = false;
     public boolean addChecksumToConfig = false;
-    public String debugProjDomainID;
+    public String debugProjDomainID = "FooDomain";
     public String vsExampleTopicName = "";
     public String vsExampleDataType = "";
     public String vsExampleDomainID = "";
@@ -42,11 +44,14 @@ public class OPSProjectProperties implements Serializable
         generateCpp = archiver.inout("generateCpp", generateCpp);
         generateJava = archiver.inout("generateJava", generateJava);
         buildJava = archiver.inout("buildJava", buildJava);
+        generateCS = archiver.inout("generateCS", generateCS);
+        buildCS = archiver.inout("buildCS", buildCS);
         buildDebugProject = archiver.inout("buildDebugProject", buildDebugProject);
         debugProjDomainID = archiver.inout("debugProjDomainID", debugProjDomainID);
         defaultOPSTopicConfigFile = archiver.inout("defaultOPSTopicConfigFile", defaultOPSTopicConfigFile);
         generateOPSConfigClass = archiver.inout("generateOPSConfigClass", generateOPSConfigClass);
         javaBuildJarDependencies = (Vector<JarDependency>) archiver.inoutSerializableList("javaBuildJarDependencies", javaBuildJarDependencies);
+        csBuildDllDependencies = (Vector<JarDependency>) archiver.inoutSerializableList("csBuildDllDependencies", csBuildDllDependencies);
         vsExampleTopicName = archiver.inout("vsExampleTopicName", vsExampleTopicName);
         vsExampleDataType = archiver.inout("vsExampleDataType", vsExampleDataType);
         vsExampleDomainID = archiver.inout("vsExampleDomainID", vsExampleDomainID);

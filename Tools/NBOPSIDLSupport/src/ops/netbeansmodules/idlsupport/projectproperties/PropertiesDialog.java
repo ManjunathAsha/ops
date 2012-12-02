@@ -15,6 +15,7 @@ import javax.swing.JFileChooser;
 import ops.netbeansmodules.idlsupport.OPSIDLProject;
 import ops.netbeansmodules.util.FileHelper;
 import ops.netbeansmodules.util.JarFileFilter;
+import ops.netbeansmodules.util.DllFileFilter;
 
 /**
  *
@@ -33,41 +34,43 @@ public class PropertiesDialog extends javax.swing.JDialog
         initComponents();
         this.properties = properties;
         this.currentDirectory = currentDirectory;
+        this.project = project;
 
         genCppCheckBox.setSelected(properties.generateCpp);
         genJavaCheckBox.setSelected(properties.generateJava);
-        buildJavaCheckBox.setSelected(properties.buildJava);
+        genCsCheckBox.setSelected(properties.generateCS);
 
-        domainIDTextField.setText(properties.debugProjDomainID);
-        buildDebugProjectCheckBox.setSelected(properties.buildDebugProject);
-        defaultConfigFileTextField.setText(properties.defaultOPSTopicConfigFile);
+        buildJavaCheckBox.setSelected(properties.buildJava);
+        buildCsCheckBox.setSelected(properties.buildCS);
 
         jarDepList.setListData(properties.javaBuildJarDependencies);
-        this.project = project;
+        csDepList.setListData(properties.csBuildDllDependencies);
+
+        buildDebugProjectCheckBox.setSelected(properties.buildDebugProject);
+        defaultConfigFileTextField.setText(properties.defaultOPSTopicConfigFile);
+        domainIDTextField.setText(properties.debugProjDomainID);
 
         vsExampleEnableCheckBox.setSelected(Boolean.parseBoolean(properties.getPropertyValue("vsExampleEnabled", "false")));
         vsExampleTopicTextField.setText(properties.getPropertyValue("vsExampleTopicName", ""));
         vsExampleDataTypeTextField.setText(properties.getPropertyValue("vsExampleDataType", ""));
         vsExampleDomainTextField.setText(properties.getPropertyValue("vsExampleDomainID", ""));
-
-
     }
 
     private void applyNewProperties()
     {
-        properties.buildJava = buildJavaCheckBox.isSelected();
         properties.generateCpp = genCppCheckBox.isSelected();
         properties.generateJava = genJavaCheckBox.isSelected();
-        properties.defaultOPSTopicConfigFile = defaultConfigFileTextField.getText();
+        properties.generateCS = genCsCheckBox.isSelected();
+        properties.buildJava = buildJavaCheckBox.isSelected();
+        properties.buildCS = buildCsCheckBox.isSelected();
         properties.buildDebugProject = buildDebugProjectCheckBox.isSelected();
+        properties.defaultOPSTopicConfigFile = defaultConfigFileTextField.getText();
         properties.debugProjDomainID = domainIDTextField.getText();
-
 
         properties.setProperty(new Property("vsExampleTopicName", vsExampleTopicTextField.getText()));
         properties.setProperty(new Property("vsExampleDataType", vsExampleDataTypeTextField.getText()));
         properties.setProperty(new Property("vsExampleEnabled", vsExampleEnableCheckBox.isSelected() + ""));
         properties.setProperty(new Property("vsExampleDomainID", vsExampleDomainTextField.getText()));
-       
     }
 
     /** This method is called from within the constructor to
@@ -80,16 +83,30 @@ public class PropertiesDialog extends javax.swing.JDialog
     private void initComponents() {
 
         mainPanel = new javax.swing.JPanel();
+        jPanel4 = new javax.swing.JPanel();
+        cancelButton = new javax.swing.JButton();
+        okButton = new javax.swing.JButton();
+        jTabbedPane2 = new javax.swing.JTabbedPane();
+        jPanel8 = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
         genCppCheckBox = new javax.swing.JCheckBox();
         genJavaCheckBox = new javax.swing.JCheckBox();
+        genCsCheckBox = new javax.swing.JCheckBox();
         jPanel2 = new javax.swing.JPanel();
         buildJavaCheckBox = new javax.swing.JCheckBox();
         jScrollPane1 = new javax.swing.JScrollPane();
         jarDepList = new javax.swing.JList();
-        jLabel1 = new javax.swing.JLabel();
         addJarDepButton = new javax.swing.JButton();
         removeJarDepButton = new javax.swing.JButton();
+        jLabel10 = new javax.swing.JLabel();
+        jPanel11 = new javax.swing.JPanel();
+        buildCsCheckBox = new javax.swing.JCheckBox();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        csDepList = new javax.swing.JList();
+        addCsDepButton = new javax.swing.JButton();
+        removeCsDepButton = new javax.swing.JButton();
+        jLabel9 = new javax.swing.JLabel();
+        jPanel9 = new javax.swing.JPanel();
         jPanel3 = new javax.swing.JPanel();
         defaultConfigFileLabel = new javax.swing.JLabel();
         defaultConfigFileTextField = new javax.swing.JTextField();
@@ -98,9 +115,7 @@ public class PropertiesDialog extends javax.swing.JDialog
         domainIDTextField = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
         buildDebugProjectCheckBox = new javax.swing.JCheckBox();
-        jPanel4 = new javax.swing.JPanel();
-        cancelButton = new javax.swing.JButton();
-        okButton = new javax.swing.JButton();
+        jPanel10 = new javax.swing.JPanel();
         jPanel5 = new javax.swing.JPanel();
         vsExampleEnableCheckBox = new javax.swing.JCheckBox();
         vsExampleDomainTextField = new javax.swing.JTextField();
@@ -117,11 +132,48 @@ public class PropertiesDialog extends javax.swing.JDialog
         setLocationByPlatform(true);
         setResizable(false);
 
+        cancelButton.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.cancelButton.text")); // NOI18N
+        cancelButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cancelButtonActionPerformed(evt);
+            }
+        });
+
+        okButton.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.okButton.text")); // NOI18N
+        okButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                okButtonActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(okButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(cancelButton)
+                .addContainerGap())
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(okButton)
+                    .addComponent(cancelButton))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.jPanel1.border.title"))); // NOI18N
 
         genCppCheckBox.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.genCppCheckBox.text")); // NOI18N
 
         genJavaCheckBox.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.genJavaCheckBox.text")); // NOI18N
+
+        genCsCheckBox.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.genCsCheckBox.text")); // NOI18N
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -132,16 +184,18 @@ public class PropertiesDialog extends javax.swing.JDialog
                 .addComponent(genCppCheckBox)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(genJavaCheckBox)
-                .addContainerGap(258, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(genCsCheckBox)
+                .addContainerGap(287, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(genCppCheckBox)
-                    .addComponent(genJavaCheckBox))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(genJavaCheckBox)
+                    .addComponent(genCsCheckBox))
+                .addContainerGap(2, Short.MAX_VALUE))
         );
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.jPanel2.border.title"))); // NOI18N
@@ -149,8 +203,6 @@ public class PropertiesDialog extends javax.swing.JDialog
         buildJavaCheckBox.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.buildJavaCheckBox.text")); // NOI18N
 
         jScrollPane1.setViewportView(jarDepList);
-
-        jLabel1.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.jLabel1.text")); // NOI18N
 
         addJarDepButton.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.addJarDepButton.text")); // NOI18N
         addJarDepButton.addActionListener(new java.awt.event.ActionListener() {
@@ -160,6 +212,13 @@ public class PropertiesDialog extends javax.swing.JDialog
         });
 
         removeJarDepButton.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.removeJarDepButton.text")); // NOI18N
+        removeJarDepButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                removeJarDepButtonActionPerformed(evt);
+            }
+        });
+
+        jLabel10.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.jLabel10.text")); // NOI18N
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -168,29 +227,133 @@ public class PropertiesDialog extends javax.swing.JDialog
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 344, Short.MAX_VALUE)
-                    .addComponent(jLabel1)
                     .addComponent(buildJavaCheckBox)
+                    .addComponent(jLabel10)
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addComponent(addJarDepButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(removeJarDepButton)))
-                .addContainerGap())
+                .addContainerGap(280, Short.MAX_VALUE))
+            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel2Layout.createSequentialGroup()
+                    .addContainerGap()
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 414, Short.MAX_VALUE)
+                    .addContainerGap()))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(buildJavaCheckBox)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel10)
+                .addGap(93, 93, 93)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(addJarDepButton)
-                    .addComponent(removeJarDepButton)))
+                    .addComponent(removeJarDepButton))
+                .addGap(0, 0, Short.MAX_VALUE))
+            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                    .addGap(42, 42, 42)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 78, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(35, Short.MAX_VALUE)))
         );
+
+        jPanel11.setBorder(javax.swing.BorderFactory.createTitledBorder(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.jPanel11.border.title"))); // NOI18N
+
+        buildCsCheckBox.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.buildCsCheckBox.text")); // NOI18N
+
+        jScrollPane2.setViewportView(csDepList);
+
+        addCsDepButton.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.addCsDepButton.text")); // NOI18N
+        addCsDepButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                addCsDepButtonActionPerformed(evt);
+            }
+        });
+
+        removeCsDepButton.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.removeCsDepButton.text")); // NOI18N
+        removeCsDepButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                removeCsDepButtonActionPerformed(evt);
+            }
+        });
+
+        jLabel9.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.jLabel9.text")); // NOI18N
+
+        javax.swing.GroupLayout jPanel11Layout = new javax.swing.GroupLayout(jPanel11);
+        jPanel11.setLayout(jPanel11Layout);
+        jPanel11Layout.setHorizontalGroup(
+            jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel11Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel11Layout.createSequentialGroup()
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 414, Short.MAX_VALUE)
+                        .addContainerGap())
+                    .addGroup(jPanel11Layout.createSequentialGroup()
+                        .addComponent(buildCsCheckBox)
+                        .addContainerGap(367, Short.MAX_VALUE))
+                    .addGroup(jPanel11Layout.createSequentialGroup()
+                        .addComponent(addCsDepButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(removeCsDepButton)
+                        .addGap(280, 280, 280))
+                    .addGroup(jPanel11Layout.createSequentialGroup()
+                        .addComponent(jLabel9)
+                        .addContainerGap(343, Short.MAX_VALUE))))
+        );
+        jPanel11Layout.setVerticalGroup(
+            jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel11Layout.createSequentialGroup()
+                .addComponent(buildCsCheckBox)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel9)
+                .addGap(4, 4, 4)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 77, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(addCsDepButton)
+                    .addComponent(removeCsDepButton)))
+        );
+
+        javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
+        jPanel8.setLayout(jPanel8Layout);
+        jPanel8Layout.setHorizontalGroup(
+            jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel8Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanel11, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
+            .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel8Layout.createSequentialGroup()
+                    .addContainerGap()
+                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addContainerGap()))
+            .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel8Layout.createSequentialGroup()
+                    .addContainerGap()
+                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addContainerGap()))
+        );
+        jPanel8Layout.setVerticalGroup(
+            jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel8Layout.createSequentialGroup()
+                .addGap(260, 260, 260)
+                .addComponent(jPanel11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(13, Short.MAX_VALUE))
+            .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel8Layout.createSequentialGroup()
+                    .addGap(10, 10, 10)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(392, Short.MAX_VALUE)))
+            .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel8Layout.createSequentialGroup()
+                    .addGap(72, 72, 72)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(200, Short.MAX_VALUE)))
+        );
+
+        jTabbedPane2.addTab(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.jPanel8.TabConstraints.tabTitle"), jPanel8); // NOI18N
 
         jPanel3.setBorder(javax.swing.BorderFactory.createTitledBorder(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.jPanel3.border.title"))); // NOI18N
 
@@ -228,7 +391,7 @@ public class PropertiesDialog extends javax.swing.JDialog
                                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                     .addComponent(changeDefaultConfigFileButton))
                                 .addComponent(defaultConfigFileLabel)
-                                .addComponent(genConfigFromSourceCommentsCheckBox, javax.swing.GroupLayout.DEFAULT_SIZE, 323, Short.MAX_VALUE))
+                                .addComponent(genConfigFromSourceCommentsCheckBox, javax.swing.GroupLayout.DEFAULT_SIZE, 393, Short.MAX_VALUE))
                             .addGap(31, 31, 31))
                         .addGroup(jPanel3Layout.createSequentialGroup()
                             .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
@@ -254,40 +417,24 @@ public class PropertiesDialog extends javax.swing.JDialog
                 .addComponent(domainIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
-        cancelButton.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.cancelButton.text")); // NOI18N
-        cancelButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cancelButtonActionPerformed(evt);
-            }
-        });
-
-        okButton.setText(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.okButton.text")); // NOI18N
-        okButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                okButtonActionPerformed(evt);
-            }
-        });
-
-        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
-        jPanel4.setLayout(jPanel4Layout);
-        jPanel4Layout.setHorizontalGroup(
-            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
-                .addContainerGap(146, Short.MAX_VALUE)
-                .addComponent(okButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(cancelButton)
+        javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
+        jPanel9.setLayout(jPanel9Layout);
+        jPanel9Layout.setHorizontalGroup(
+            jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel9Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
         );
-        jPanel4Layout.setVerticalGroup(
-            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel4Layout.createSequentialGroup()
+        jPanel9Layout.setVerticalGroup(
+            jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel9Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(okButton)
-                    .addComponent(cancelButton))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(281, Short.MAX_VALUE))
         );
+
+        jTabbedPane2.addTab(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.jPanel9.TabConstraints.tabTitle"), jPanel9); // NOI18N
 
         jPanel5.setBorder(javax.swing.BorderFactory.createTitledBorder(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.jPanel5.border.title"))); // NOI18N
 
@@ -330,7 +477,7 @@ public class PropertiesDialog extends javax.swing.JDialog
                         .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel5)
                             .addComponent(vsExampleDataTypeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addContainerGap(32, Short.MAX_VALUE))
+                .addContainerGap(102, Short.MAX_VALUE))
         );
         jPanel5Layout.setVerticalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -348,34 +495,42 @@ public class PropertiesDialog extends javax.swing.JDialog
                     .addComponent(vsExampleDataTypeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
         );
 
+        javax.swing.GroupLayout jPanel10Layout = new javax.swing.GroupLayout(jPanel10);
+        jPanel10.setLayout(jPanel10Layout);
+        jPanel10Layout.setHorizontalGroup(
+            jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel10Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        jPanel10Layout.setVerticalGroup(
+            jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel10Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(351, Short.MAX_VALUE))
+        );
+
+        jTabbedPane2.addTab(org.openide.util.NbBundle.getMessage(PropertiesDialog.class, "PropertiesDialog.jPanel10.TabConstraints.tabTitle"), jPanel10); // NOI18N
+
         javax.swing.GroupLayout mainPanelLayout = new javax.swing.GroupLayout(mainPanel);
         mainPanel.setLayout(mainPanelLayout);
         mainPanelLayout.setHorizontalGroup(
             mainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, mainPanelLayout.createSequentialGroup()
+            .addGroup(mainPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(mainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jPanel5, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, mainPanelLayout.createSequentialGroup()
-                        .addGap(106, 106, 106)
-                        .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(jPanel3, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(mainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jTabbedPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 471, Short.MAX_VALUE))
                 .addContainerGap())
         );
         mainPanelLayout.setVerticalGroup(
             mainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(mainPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jTabbedPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 482, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(11, 11, 11)
                 .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -387,7 +542,7 @@ public class PropertiesDialog extends javax.swing.JDialog
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(mainPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(mainPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
 
         pack();
@@ -420,6 +575,7 @@ public class PropertiesDialog extends javax.swing.JDialog
         if(result == JFileChooser.APPROVE_OPTION)
         {
             properties.javaBuildJarDependencies.add(new JarDependency(FileHelper.unixSlashed(FileHelper.getRelativePath(new File(currentDirectory), new File(fc.getSelectedFile().getPath())))));
+            ///### properties.javaBuildJarDependencies.add(new JarDependency(FileHelper.unixSlashed(fc.getSelectedFile().getPath())));
         }
         jarDepList.updateUI();
     }//GEN-LAST:event_addJarDepButtonActionPerformed
@@ -428,6 +584,41 @@ public class PropertiesDialog extends javax.swing.JDialog
     {//GEN-HEADEREND:event_vsExampleTopicTextFieldActionPerformed
         // TODO add your handling code here:
 }//GEN-LAST:event_vsExampleTopicTextFieldActionPerformed
+
+    private void removeJarDepButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removeJarDepButtonActionPerformed
+        // TODO add your handling code here:
+        int idx = jarDepList.getSelectedIndex();
+        if (idx >= 0) {
+            properties.javaBuildJarDependencies.remove(idx);
+            jarDepList.updateUI();
+        }
+    }//GEN-LAST:event_removeJarDepButtonActionPerformed
+
+    private void addCsDepButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addCsDepButtonActionPerformed
+        // TODO add your handling code here:
+        JFileChooser fc = new JFileChooser(currentDirectory);
+        fc.setFileFilter(new DllFileFilter());
+        fc.setAcceptAllFileFilterUsed(false);
+        fc.setVisible(true);
+
+        int result = fc.showOpenDialog(this);
+
+        if(result == JFileChooser.APPROVE_OPTION)
+        {
+            properties.csBuildDllDependencies.add(new JarDependency(FileHelper.unixSlashed(FileHelper.getRelativePath(new File(currentDirectory), new File(fc.getSelectedFile().getPath())))));
+            ///### properties.csBuildDllDependencies.add(new JarDependency(FileHelper.unixSlashed(fc.getSelectedFile().getPath())));
+        }
+        csDepList.updateUI();
+    }//GEN-LAST:event_addCsDepButtonActionPerformed
+
+    private void removeCsDepButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removeCsDepButtonActionPerformed
+        // TODO add your handling code here:
+        int idx = csDepList.getSelectedIndex();
+        if (idx >= 0) {
+            properties.csBuildDllDependencies.remove(idx);
+            csDepList.updateUI();
+        }
+    }//GEN-LAST:event_removeCsDepButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -454,31 +645,43 @@ public class PropertiesDialog extends javax.swing.JDialog
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton addCsDepButton;
     private javax.swing.JButton addJarDepButton;
+    private javax.swing.JCheckBox buildCsCheckBox;
     private javax.swing.JCheckBox buildDebugProjectCheckBox;
     private javax.swing.JCheckBox buildJavaCheckBox;
     private javax.swing.JButton cancelButton;
     private javax.swing.JButton changeDefaultConfigFileButton;
+    private javax.swing.JList csDepList;
     private javax.swing.JLabel defaultConfigFileLabel;
     private javax.swing.JTextField defaultConfigFileTextField;
     private javax.swing.JTextField domainIDTextField;
     private javax.swing.JCheckBox genConfigFromSourceCommentsCheckBox;
     private javax.swing.JCheckBox genCppCheckBox;
+    private javax.swing.JCheckBox genCsCheckBox;
     private javax.swing.JCheckBox genJavaCheckBox;
-    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel10;
+    private javax.swing.JPanel jPanel11;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
+    private javax.swing.JPanel jPanel8;
+    private javax.swing.JPanel jPanel9;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JTabbedPane jTabbedPane2;
     private javax.swing.JList jarDepList;
     private javax.swing.JPanel mainPanel;
     private javax.swing.JButton okButton;
+    private javax.swing.JButton removeCsDepButton;
     private javax.swing.JButton removeJarDepButton;
     private javax.swing.JTextField vsExampleDataTypeTextField;
     private javax.swing.JTextField vsExampleDomainTextField;

@@ -66,7 +66,7 @@ public class CppCompiler extends AbstractTemplateBasedIDLCompiler//implements ID
                 }
 //            compileHelper(iDLClass);
             }
-            compileTypeSupport(idlClasses, extractProjectName(projectDirectory));
+            compileTypeSupport(idlClasses, extractProjectName(projectDirectory).replace(" ", "_"));
         } catch (IOException iOException)
         {
              JOptionPane.showMessageDialog(null, "Generating C++ failed with the following exception: " + iOException.getMessage());
@@ -423,7 +423,14 @@ public class CppCompiler extends AbstractTemplateBasedIDLCompiler//implements ID
 
             if (!field.getComment().equals(""))
             {
-                ret += tab(1) + "///" + field.getComment().replace("/*", "").replace("*/", "") + endl();
+                String comment = field.getComment();
+                int idx;
+                while ((idx = comment.indexOf('\n')) >= 0) {
+                  ret += tab(1) + "///" + comment.substring(0,idx).replace("/*", "").replace("*/", "") + endl();
+                  comment = comment.substring(idx+1);
+                }
+                ret += tab(1) + "///" + comment.replace("/*", "").replace("*/", "") + endl();
+///                ret += tab(1) + "///" + field.getComment().replace("/*", "").replace("*/", "") + endl();
             }
             if (field.isArray())
             {

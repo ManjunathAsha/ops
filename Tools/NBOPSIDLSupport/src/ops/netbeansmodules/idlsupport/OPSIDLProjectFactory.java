@@ -48,6 +48,7 @@ public class OPSIDLProjectFactory implements ProjectFactory
             catch (FormatException ex)
             {
                 //This is OK, we dont have a config yet
+                project.setDefaultProperties();
             }
             catch (IOException ex)
             {

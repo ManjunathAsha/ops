@@ -35,7 +35,7 @@ public class JavaOPSConfigCompiler implements OPSConfigCompiler
             
             for (Domain domain : config.getDomains())
             {
-                String projectName = extractProjectName(projectDirectory);
+                String projectName = extractProjectName(projectDirectory).replace(" ", "_");
                 CompilerHelper ch = new CompilerHelper();
                 String className = domain.getDomainID() + "TopicConfig";
                 ch.setOutputFileName(projectDirectory + JAVA_DIR + "/" + projectName + "/" + className + ".java");

@@ -8,22 +8,19 @@
             <module-dependencies>
                 <dependency>
                     <code-name-base>configlib</code-name-base>
-                    <build-prerequisite/>
-                    <compile-dependency/>
                     <run-dependency>
-                        <implementation-version/>
+                        <specification-version>1.0</specification-version>
                     </run-dependency>
                 </dependency>
             </module-dependencies>
             <public-packages>
                 <package>ops</package>
+                <package>ops.IOService</package>
                 <package>ops.archiver</package>
-                <package>ops.jarsearch</package>
-                <package>ops.jarsearch.util</package>
+                <package>ops.jni</package>
                 <package>ops.mains</package>
-                <package>ops.opsreflection</package>
                 <package>ops.protocol</package>
-                <package>test</package>
+                <package>ops.transport.inprocess</package>
             </public-packages>
             <class-path-extension>
                 <runtime-relative-path>ext/OPSJLib.jar</runtime-relative-path>

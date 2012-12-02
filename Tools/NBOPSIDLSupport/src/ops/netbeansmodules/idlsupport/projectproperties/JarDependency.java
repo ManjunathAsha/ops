@@ -21,7 +21,7 @@ public class JarDependency implements Serializable
     }
 
     
-    JarDependency(String relativePath)
+    public JarDependency(String relativePath)
     {
         path = relativePath;
     }

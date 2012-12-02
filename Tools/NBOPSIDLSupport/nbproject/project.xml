@@ -158,7 +158,12 @@
                 </dependency>
             </module-dependencies>
             <public-packages>
+                <package>ops.netbeansmodules.idlsupport</package>
+                <package>ops.netbeansmodules.idlsupport.compilers</package>
                 <package>ops.netbeansmodules.idlsupport.godegenerator</package>
+                <package>ops.netbeansmodules.idlsupport.projectproperties</package>
+                <package>ops.netbeansmodules.topictool</package>
+                <package>ops.netbeansmodules.util</package>
             </public-packages>
         </data>
     </configuration>
