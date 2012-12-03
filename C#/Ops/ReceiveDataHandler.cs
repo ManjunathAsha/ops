@@ -38,6 +38,11 @@ namespace Ops
             this.receiver = receiver;
         }
 
+        public int GetSampleMaxSize()
+        {
+            return topic.GetSampleMaxSize();
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void AddSubscriber(Subscriber sub)
         {
