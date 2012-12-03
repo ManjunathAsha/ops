@@ -2,16 +2,13 @@
 
 package pizza;
 
-import ops.CommException;
 import ops.Publisher;
 import ops.OPSObject;
 import ops.Topic;
-import ops.AckData;
-
 
 public class VessuvioDataPublisher extends Publisher 
 {
-    public VessuvioDataPublisher(Topic<VessuvioData> t) 
+    public VessuvioDataPublisher(Topic<VessuvioData> t)
     {
         super(t);
     }

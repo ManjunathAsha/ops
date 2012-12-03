@@ -13,6 +13,13 @@ public class LHCDataSubscriber extends Subscriber
     public LHCDataSubscriber(Topic<LHCData> t) //throws ops.OPSTopicTypeMissmatchException
     {
         super(t);
+
+        participant.addTypeSupport(LHCData.getTypeFactory());
         
+    }
+
+    public LHCData getData()
+    {
+        return (LHCData)super.getData();
     }
 }

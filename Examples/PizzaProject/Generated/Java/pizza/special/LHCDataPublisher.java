@@ -2,16 +2,13 @@
 
 package pizza.special;
 
-import ops.CommException;
 import ops.Publisher;
 import ops.OPSObject;
 import ops.Topic;
-import ops.AckData;
-
 
 public class LHCDataPublisher extends Publisher 
 {
-    public LHCDataPublisher(Topic<LHCData> t) 
+    public LHCDataPublisher(Topic<LHCData> t)
     {
         super(t);
     }

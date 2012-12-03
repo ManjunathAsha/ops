@@ -2,16 +2,13 @@
 
 package pizza;
 
-import ops.CommException;
 import ops.Publisher;
 import ops.OPSObject;
 import ops.Topic;
-import ops.AckData;
-
 
 public class PizzaDataPublisher extends Publisher 
 {
-    public PizzaDataPublisher(Topic<PizzaData> t) 
+    public PizzaDataPublisher(Topic<PizzaData> t)
     {
         super(t);
     }

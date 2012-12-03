@@ -13,6 +13,13 @@ public class CheeseSubscriber extends Subscriber
     public CheeseSubscriber(Topic<Cheese> t) //throws ops.OPSTopicTypeMissmatchException
     {
         super(t);
+
+        participant.addTypeSupport(Cheese.getTypeFactory());
         
+    }
+
+    public Cheese getData()
+    {
+        return (Cheese)super.getData();
     }
 }

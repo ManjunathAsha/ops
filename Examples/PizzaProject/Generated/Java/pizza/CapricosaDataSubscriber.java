@@ -13,6 +13,13 @@ public class CapricosaDataSubscriber extends Subscriber
     public CapricosaDataSubscriber(Topic<CapricosaData> t) //throws ops.OPSTopicTypeMissmatchException
     {
         super(t);
+
+        participant.addTypeSupport(CapricosaData.getTypeFactory());
         
+    }
+
+    public CapricosaData getData()
+    {
+        return (CapricosaData)super.getData();
     }
 }

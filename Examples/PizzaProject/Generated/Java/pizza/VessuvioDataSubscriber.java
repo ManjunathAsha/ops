@@ -13,6 +13,13 @@ public class VessuvioDataSubscriber extends Subscriber
     public VessuvioDataSubscriber(Topic<VessuvioData> t) //throws ops.OPSTopicTypeMissmatchException
     {
         super(t);
+
+        participant.addTypeSupport(VessuvioData.getTypeFactory());
         
+    }
+
+    public VessuvioData getData()
+    {
+        return (VessuvioData)super.getData();
     }
 }

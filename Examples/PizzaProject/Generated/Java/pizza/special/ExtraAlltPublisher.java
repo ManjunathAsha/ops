@@ -2,16 +2,13 @@
 
 package pizza.special;
 
-import ops.CommException;
 import ops.Publisher;
 import ops.OPSObject;
 import ops.Topic;
-import ops.AckData;
-
 
 public class ExtraAlltPublisher extends Publisher 
 {
-    public ExtraAlltPublisher(Topic<ExtraAllt> t) 
+    public ExtraAlltPublisher(Topic<ExtraAllt> t)
     {
         super(t);
     }

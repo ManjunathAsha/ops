@@ -13,6 +13,13 @@ public class PizzaDataSubscriber extends Subscriber
     public PizzaDataSubscriber(Topic<PizzaData> t) //throws ops.OPSTopicTypeMissmatchException
     {
         super(t);
+
+        participant.addTypeSupport(PizzaData.getTypeFactory());
         
+    }
+
+    public PizzaData getData()
+    {
+        return (PizzaData)super.getData();
     }
 }

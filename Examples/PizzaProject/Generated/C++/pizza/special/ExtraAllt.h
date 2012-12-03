@@ -30,7 +30,7 @@ public:
 	float timeBakedHours;
 	double timeBakedSeconds;
 	std::string description;
-	pizza::special::Cheese* cheese;
+	pizza::special::Cheese* cheese_;
 	std::vector<bool> bools;
 	std::vector<char> bytes;
 	std::vector<int> ints;
@@ -46,7 +46,7 @@ public:
 		, extraCheese(false), nrOfMushRooms(0), meetQuality(0), timestamp(0), timeBakedHours(0), timeBakedSeconds(0)
     {
         OPSObject::appendType(std::string("pizza.special.ExtraAllt"));
-		cheese = new pizza::special::Cheese;
+		cheese_ = new pizza::special::Cheese;
 
 
     }
@@ -56,7 +56,7 @@ public:
 		, extraCheese(false), nrOfMushRooms(0), meetQuality(0), timestamp(0), timeBakedHours(0), timeBakedSeconds(0)
     {
         OPSObject::appendType(std::string("pizza.special.ExtraAllt"));
-		cheese = new pizza::special::Cheese;
+		cheese_ = new pizza::special::Cheese;
 
         __c.fillClone((ExtraAllt*)this);
 
@@ -80,7 +80,7 @@ public:
 		archive->inout(std::string("timeBakedHours"), timeBakedHours);
 		archive->inout(std::string("timeBakedSeconds"), timeBakedSeconds);
 		archive->inout(std::string("description"), description);
-		cheese = (pizza::special::Cheese*) archive->inout(std::string("cheese"), cheese);
+		cheese_ = (pizza::special::Cheese*) archive->inout(std::string("cheese_"), cheese_);
 		archive->inout(std::string("bools"), bools);
 		archive->inout(std::string("bytes"), bytes);
 		archive->inout(std::string("ints"), ints);
@@ -111,8 +111,8 @@ public:
 		narrRet->timeBakedHours = timeBakedHours;
 		narrRet->timeBakedSeconds = timeBakedSeconds;
 		narrRet->description = description;
-		if(narrRet->cheese) delete narrRet->cheese;
-		narrRet->cheese = (pizza::special::Cheese*)cheese->clone();
+		if(narrRet->cheese_) delete narrRet->cheese_;
+		narrRet->cheese_ = (pizza::special::Cheese*)cheese_->clone();
 		narrRet->bools = bools;
 		narrRet->bytes = bytes;
 		narrRet->ints = ints;
@@ -127,7 +127,7 @@ public:
     ///Destructor: Note that all aggregated data and vectors are completely deleted.
     virtual ~ExtraAllt(void)
     {
-		if(cheese) delete cheese;
+		if(cheese_) delete cheese_;
 
     }
     

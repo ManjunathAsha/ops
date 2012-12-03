@@ -15,7 +15,7 @@ class ExtraAllt extends LHCData
     double timeBakedSeconds;
     string description;
 
-    virtual pizza.special.Cheese cheese;
+    virtual pizza.special.Cheese cheese_;
 
     boolean[] bools;
     byte[] bytes;

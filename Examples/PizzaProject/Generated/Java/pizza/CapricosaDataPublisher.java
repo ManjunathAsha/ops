@@ -2,16 +2,13 @@
 
 package pizza;
 
-import ops.CommException;
 import ops.Publisher;
 import ops.OPSObject;
 import ops.Topic;
-import ops.AckData;
-
 
 public class CapricosaDataPublisher extends Publisher 
 {
-    public CapricosaDataPublisher(Topic<CapricosaData> t) 
+    public CapricosaDataPublisher(Topic<CapricosaData> t)
     {
         super(t);
     }

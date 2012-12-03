@@ -13,6 +13,13 @@ public class ExtraAlltSubscriber extends Subscriber
     public ExtraAlltSubscriber(Topic<ExtraAllt> t) //throws ops.OPSTopicTypeMissmatchException
     {
         super(t);
+
+        participant.addTypeSupport(ExtraAllt.getTypeFactory());
         
+    }
+
+    public ExtraAllt getData()
+    {
+        return (ExtraAllt)super.getData();
     }
 }
