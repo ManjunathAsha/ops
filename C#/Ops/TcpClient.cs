@@ -117,7 +117,7 @@ namespace Ops
         private void SetupSocket(string serverIP, int serverPort, int receiveBufferSize) 
         {
             this.tcpClient = new System.Net.Sockets.TcpClient(serverIP, serverPort);
-            this.tcpClient.ReceiveBufferSize = receiveBufferSize;
+            if (receiveBufferSize > 0) this.tcpClient.ReceiveBufferSize = receiveBufferSize;
             //socket.setSoTimeout(100);
             this.inputStream = tcpClient.GetStream(); 
         }
