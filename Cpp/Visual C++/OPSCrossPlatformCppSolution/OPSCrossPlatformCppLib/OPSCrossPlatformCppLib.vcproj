@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SolutionDir)..\..\include&quot;;&quot;C:\Program Files\boost\boost_1_38&quot;"
+				AdditionalIncludeDirectories="&quot;$(SolutionDir)..\..\include&quot;;&quot;C:\Program Files (x86)\boost\boost_1_38&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -85,7 +85,7 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="2"
-			WholeProgramOptimization="1"
+			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -109,7 +109,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="&quot;$(SolutionDir)..\..\include&quot;;&quot;C:\Program Files\boost\boost_1_38&quot;"
+				AdditionalIncludeDirectories="&quot;$(SolutionDir)..\..\include&quot;;&quot;C:\Program Files (x86)\boost\boost_1_38&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -173,7 +173,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SolutionDir)..\..\include&quot;;&quot;C:\Program Files\boost\boost_1_38&quot;"
+				AdditionalIncludeDirectories="&quot;$(SolutionDir)..\..\include&quot;;&quot;C:\Program Files (x86)\boost\boost_1_38&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -217,7 +217,7 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="2"
-			WholeProgramOptimization="1"
+			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -241,7 +241,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="&quot;$(SolutionDir)..\..\include&quot;;&quot;C:\Program Files\boost\boost_1_38&quot;"
+				AdditionalIncludeDirectories="&quot;$(SolutionDir)..\..\include&quot;;&quot;C:\Program Files (x86)\boost\boost_1_38&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
