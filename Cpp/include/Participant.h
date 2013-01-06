@@ -149,6 +149,7 @@ namespace ops
 		ParticipantInfoData partInfoData;
 		Lockable partInfoDataMutex;
 
+		void setUdpTransportInfo(std::string ip, int port);
 		bool hasPublisherOn(std::string topicName);
 
 		Domain* domain;		

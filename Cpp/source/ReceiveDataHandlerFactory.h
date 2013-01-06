@@ -11,21 +11,14 @@ namespace ops
     class ReceiveDataHandlerFactory
     {
     private:
-        ///Receiver used to get a unigue port/id for this participant on the current machine
-        ReceiveDataHandler* udpReceiveDataHandler;
-
         ///By Singelton, one ReceiveDataHandler per Topic (name) on this Participant
         std::map<std::string, ReceiveDataHandler*> receiveDataHandlerInstances;
-
-///        ///By Singelton, one ReceiveDataHandler on multicast transport per port
-///        std::map<int, ReceiveDataHandler*> multicastReceiveDataHandlerInstances;
-
-///        ///By Singelton, one ReceiveDataHandler on tcp transport per port
-///        std::map<int, ReceiveDataHandler*> tcpReceiveDataHandlerInstances;
 
         ///Garbage vector for ReceiveDataHandlers, these can safely be deleted.
         std::vector<ReceiveDataHandler*> garbageReceiveDataHandlers;
         ops::Lockable garbageLock;
+
+		inline std::string makeKey(Topic& top);
 
     public:
         ReceiveDataHandlerFactory(Participant* participant);

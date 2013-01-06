@@ -30,6 +30,7 @@ namespace ops
 
     ReceiveDataHandler::ReceiveDataHandler(Topic top, Participant* part) :
     expectedSegment(0),
+	sampleMaxSize(top.getSampleMaxSize()),
     memMap(top.getSampleMaxSize() / OPSConstants::PACKET_MAX_SIZE + 1, OPSConstants::PACKET_MAX_SIZE),
     firstReceived(false),
     currentMessageSize(0)

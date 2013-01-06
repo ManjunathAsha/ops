@@ -60,12 +60,16 @@ namespace ops
 		void addListener(Listener<OPSMessage*>* listener);
 		void removeListener(Listener<OPSMessage*>* listener);
 
-///LA
 		int numReservedMessages()
 		{
 			return messageReferenceHandler.size();
 		}
-///LA
+
+		int getSampleMaxSize()
+        {
+            return sampleMaxSize;
+        }
+
 		Receiver* getReceiver()
 		{
 			return receiver;
@@ -101,6 +105,7 @@ namespace ops
 
 		///Preallocated MemoryMap for receiving data
 		MemoryMap memMap;
+		int sampleMaxSize;
 
 		//The Participant to which this ReceiveDataHandler belongs.
 		Participant* participant;

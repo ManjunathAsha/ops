@@ -25,6 +25,7 @@
 
 namespace ops
 {
+	/// NOTE. Must be kept in sync with other OPS language implementations
 	class ParticipantInfoData : public OPSObject
 	{
 	public:

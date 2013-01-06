@@ -290,6 +290,13 @@ namespace ops
 		aliveDeadlineTimer->start(aliveTimeout);
 	}
 
+	void Participant::setUdpTransportInfo(std::string ip, int port)
+	{
+		SafeLock lock(&partInfoDataMutex);
+		partInfoData.ip = ip;
+		partInfoData.mc_udp_port = port;
+	}
+
 	void Participant::addTypeSupport(ops::SerializableFactory* typeSupport)
 	{
 		objectFactory->add(typeSupport);
