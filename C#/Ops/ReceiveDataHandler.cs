@@ -43,6 +43,17 @@ namespace Ops
             return topic.GetSampleMaxSize();
         }
 
+        public string GetTransport()
+        {
+            return topic.GetTransport();
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public int GetNrOfSubscribers()
+        {
+            return subscribers.Count;
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void AddSubscriber(Subscriber sub)
         {

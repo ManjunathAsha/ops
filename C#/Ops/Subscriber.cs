@@ -28,7 +28,7 @@ namespace Ops
 		private MessageFilterSet messageFilters = new MessageFilterSet();
 		private readonly object newDataEvent = new object();
 		protected Participant participant;
-		private ReceiveDataHandler receiveDataHandler;
+		private ReceiveDataHandler receiveDataHandler = null;
 		private long sampleTime1;  
         private long sampleTime2;  
 		private long timeBaseMinSeparationTime;
@@ -45,7 +45,6 @@ namespace Ops
             }
             this.topic = t;
             this.participant = Participant.GetInstance(topic.GetDomainID(), topic.GetParticipantID());
-            receiveDataHandler = participant.GetReceiveDataHandler(t);
             deadlineNotifier = DeadlineNotifier.GetInstance();
             inProcessTransport = participant.GetInProcessTransport();
         }
@@ -109,6 +108,7 @@ namespace Ops
                 // A call to "SetDeadlineQoS" enables dead line notification if current timeout is > 0.
                 SetDeadlineQoS(deadlineTimeout / 10000);
 
+                receiveDataHandler = participant.GetReceiveDataHandler(topic);
                 receiveDataHandler.AddSubscriber(this);
                 inProcessTransport.AddSubscriber(this);
                 this.active = true;
@@ -123,15 +123,19 @@ namespace Ops
         /////[MethodImpl(MethodImplOptions.Synchronized)]
         public bool Stop()
         {
+            bool retVal = true;
+
             if (this.active)
             {
                 this.active = false;
                 deadlineNotifier.Remove(this);
                 inProcessTransport.RemoveSubscriber(this);
-                return receiveDataHandler.RemoveSubscriber(this);
+                retVal = receiveDataHandler.RemoveSubscriber(this);
+                receiveDataHandler = null;
+                participant.ReleaseReceiveDataHandler(topic);
             }
 
-            return true;
+            return retVal;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -158,7 +162,6 @@ namespace Ops
                 deadlineEvent.FireEvent();
                 lastDeadlineTime = currentTime;
             }
-
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

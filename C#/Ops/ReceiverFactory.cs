@@ -24,6 +24,10 @@ namespace Ops
                 {
                     return new TcpClientReceiver(topic.GetDomainAddress(), topic.GetPort(), topic.GetInSocketBufferSize());
                 }
+                else if (topic.GetTransport().Equals(Topic.TRANSPORT_UDP))
+                {
+                    return new UdpReceiver(0, localInterface, topic.GetInSocketBufferSize());
+                }
             }
             catch (System.IO.IOException ex)
             {
