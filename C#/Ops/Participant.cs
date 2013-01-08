@@ -6,7 +6,9 @@
 ///////////////////////////////////////////////////////////
 
 using System.IO;
+using System.Net;
 using System.Runtime.CompilerServices;  // Needed for the "MethodImpl" synchronization attribute
+using System.Threading;
 
 namespace Ops 
 {
@@ -17,12 +19,15 @@ namespace Ops
 
         private OPSConfig config;
         protected Domain domain;
-		protected string domainID;
+        public string domainID { get; private set; }
 		private InProcessTransport inProcessTransport = new InProcessTransport();
-		private string participantID;
+        public string participantID { get; private set; }
 		private ReceiveDataHandlerFactory receiveDataHandlerFactory = new ReceiveDataHandlerFactory();
 		private SendDataHandlerFactory sendDataHandlerFactory = new SendDataHandlerFactory();
 
+        private ParticipantInfoData partInfoData = new ParticipantInfoData();
+        private Publisher partInfoPub = null;
+        
         /**
          * Method for retreiving the default Participant instance for the @param domainID
          * @param domainID
@@ -94,6 +99,7 @@ namespace Ops
                 //TODO: rethrow
             }
             this.inProcessTransport.Start();
+            SetupCyclicThread();
         }
 
         public Participant(Domain domain, string participantID)
@@ -104,6 +110,38 @@ namespace Ops
             this.domain = domain;
 
             this.inProcessTransport.Start();
+            SetupCyclicThread();
+        }
+
+        // Initialize static data in partInfoData
+        private void InitPartInfoData()
+        {
+            string processId = System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+            System.Net.NetworkInformation.IPGlobalProperties gp = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties();
+            string Name = gp.HostName + " (" + processId + ")";
+
+            lock (partInfoData)
+            {
+                partInfoData.name = Name;
+                partInfoData.languageImplementation = "C#";
+                partInfoData.id = participantID;
+                partInfoData.domain = domainID;
+            }
+        }
+
+        public void SetUdpTransportInfo(string ip, int port)
+        {
+            lock (partInfoData)
+            {
+                partInfoData.ip = ip;
+                partInfoData.mc_udp_port = port;
+            }
+        }
+
+        // 
+        public bool HasPublisherOn(string topicName)
+        {
+            return true;    ///TODO
         }
 
         /**
@@ -135,11 +173,49 @@ namespace Ops
             return topic;
         }
 
+        /**
+         * Creates a Topic that can be used to Subscribe to the participant info data
+         * @return a new Topic for the participant info data.
+         */
+        public Topic CreateParticipantInfoTopic()
+    	{
+    		Topic infoTopic = new Topic("ops.bit.ParticipantInfoTopic", domain.GetMetaDataMcPort(), "ops.ParticipantInfoData", domain.GetDomainAddress());
+	    	infoTopic.SetDomainID(domainID);
+		    infoTopic.SetParticipantID(participantID);
+    		infoTopic.SetTransport(Topic.TRANSPORT_MC);
+	    	return infoTopic;
+    	}
+
         // By modified singelton
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ReceiveDataHandler GetReceiveDataHandler(Topic topic)
         {
-            return this.receiveDataHandlerFactory.GetReceiveDataHandler(topic, this);
+            ReceiveDataHandler rdh = this.receiveDataHandlerFactory.GetReceiveDataHandler(topic, this);
+            if (rdh != null)
+            {
+                lock (partInfoData)
+                {
+                    partInfoData.subscribeTopics.Add(new TopicInfoData(topic));
+                }
+            }
+            return rdh;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void ReleaseReceiveDataHandler(Topic topic)
+        {
+            this.receiveDataHandlerFactory.ReleaseReceiveDataHandler(topic, this);
+
+            lock (partInfoData)
+            {
+                for (int i = 0; i < partInfoData.subscribeTopics.Count; i++)
+                {
+        			if (partInfoData.subscribeTopics[i].name.Equals(topic.GetName())) {
+                        partInfoData.subscribeTopics.RemoveAt(i);
+        				break;
+		        	}
+		        }
+            }
         }
 
         // By modified singelton
@@ -166,6 +242,40 @@ namespace Ops
                 OPSConfig.SaveConfig(this.config, configFile);
             }
         }
-	}
+    
+        private void Run()
+        {
+            InitPartInfoData();
+
+            while (true)
+            {
+                Thread.Sleep(1000);
+
+                // Create publisher for participant info data
+                if ( (partInfoPub == null) && (domain.GetMetaDataMcPort() != 0) )
+                {
+                    partInfoPub = new Publisher(CreateParticipantInfoTopic());
+                }
+
+                // Publish data
+                if (partInfoData != null)
+                {
+                    lock (partInfoData)
+                    {
+                        partInfoPub.WriteAsOPSObject(partInfoData);
+                    }
+                }
+            }
+        }
+
+        private void SetupCyclicThread()
+        {
+            Thread thread = new Thread(new ThreadStart(Run));
+            thread.IsBackground = true;
+            thread.Name = "ParticipantThread_" + domainID + "_" + participantID;
+            thread.Start();
+        }
+
+    }
 
 }
