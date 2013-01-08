@@ -34,6 +34,10 @@ namespace Ops
             {
                 return new Topic();
             }
+            if (type.Equals("ops.ParticipantInfoData"))
+            {
+                return new ParticipantInfoData();
+            }
             return null;
         }
 
