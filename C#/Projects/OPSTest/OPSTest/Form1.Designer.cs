@@ -258,9 +258,9 @@
             this.labelDeadLineInterval.AutoSize = true;
             this.labelDeadLineInterval.Location = new System.Drawing.Point(11, 87);
             this.labelDeadLineInterval.Name = "labelDeadLineInterval";
-            this.labelDeadLineInterval.Size = new System.Drawing.Size(111, 13);
+            this.labelDeadLineInterval.Size = new System.Drawing.Size(119, 13);
             this.labelDeadLineInterval.TabIndex = 14;
-            this.labelDeadLineInterval.Text = "Dead Line Interval [s]:";
+            this.labelDeadLineInterval.Text = "Dead Line Interval [ms]:";
             // 
             // groupBox1
             // 
@@ -301,7 +301,6 @@
             this.label1.Size = new System.Drawing.Size(131, 13);
             this.label1.TabIndex = 17;
             this.label1.Text = "Extra VessuvioData bytes:";
-            this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // timerCyclicWrite
             // 

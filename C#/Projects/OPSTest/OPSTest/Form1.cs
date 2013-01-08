@@ -14,7 +14,7 @@ using pizza;
 
 namespace OPSTest
 {
-    public partial class Form_TestOps : Form, ILogListener, IOpsHelperCallback<VessuvioData>, IOpsHelperCallback<PizzaData>
+    public partial class Form_TestOps : Form, ILogListener, IOpsHelperCallback<VessuvioData>, IOpsHelperCallback<PizzaData>, IOpsHelperCallback<Ops.ParticipantInfoData>
     {
         private Participant myParticipant = null;
         private Participant OtherParticipant = null;
@@ -64,6 +64,8 @@ namespace OPSTest
         private List<COpsHelper<PizzaData>> Pizza = new List<COpsHelper<PizzaData>>();
         private List<COpsHelper<VessuvioData>> Vessuvio = new List<COpsHelper<VessuvioData>>();
 
+        //private COpsHelperPartInfoData partInfoHelper = null;
+
         //
         public Form_TestOps()
         {
@@ -91,6 +93,8 @@ namespace OPSTest
             MyTopicInfoList.Add(new MyTopicInfo("PizzaDomain",      "TcpVessuvioTopic",   "pizza.VessuvioData"));
             MyTopicInfoList.Add(new MyTopicInfo("PizzaDomain",      "TcpPizzaTopic2",     "pizza.PizzaData"));
             MyTopicInfoList.Add(new MyTopicInfo("PizzaDomain",      "TcpVessuvioTopic2",  "pizza.VessuvioData"));
+            MyTopicInfoList.Add(new MyTopicInfo("PizzaDomain",      "UdpPizzaTopic",      "pizza.PizzaData"));
+            MyTopicInfoList.Add(new MyTopicInfo("PizzaDomain",      "UdpVessuvioTopic",   "pizza.VessuvioData"));
             MyTopicInfoList.Add(new MyTopicInfo("OtherPizzaDomain", "OtherPizzaTopic",    "pizza.PizzaData"));
             MyTopicInfoList.Add(new MyTopicInfo("OtherPizzaDomain", "OtherVessuvioTopic", "pizza.VessuvioData"));
 
@@ -143,12 +147,12 @@ namespace OPSTest
             {
                 try
                 {
-                    myParticipant = Participant.GetInstance("PizzaDomain", "p", "ops_config.xml");
-                    OtherParticipant = Participant.GetInstance("OtherPizzaDomain", "p", "ops_config.xml");
+                    myParticipant = Participant.GetInstance("PizzaDomain", "partId", "ops_config.xml");
+                    OtherParticipant = Participant.GetInstance("OtherPizzaDomain", "partId", "ops_config.xml");
                     if (myParticipant == null)
                     {
-                        myParticipant = Participant.GetInstance("PizzaDomain", "p", "..\\..\\ops_config.xml");
-                        OtherParticipant = Participant.GetInstance("OtherPizzaDomain", "p", "..\\..\\ops_config.xml");
+                        myParticipant = Participant.GetInstance("PizzaDomain", "partId", "..\\..\\ops_config.xml");
+                        OtherParticipant = Participant.GetInstance("OtherPizzaDomain", "partId", "..\\..\\ops_config.xml");
                     }
                     if (myParticipant == null)
                     {
@@ -170,6 +174,9 @@ namespace OPSTest
                             info.Part = OtherParticipant;
                         }
                     }
+
+                    //TEST partInfoHelper = new COpsHelperPartInfoData(this);
+                    // partInfoHelper.CreateSubscriber(myParticipant);
 
                 }
                 catch (Exception ex)
@@ -420,9 +427,9 @@ namespace OPSTest
             Log("[Topic: " + sender.GetTopic().GetName() + "] Vessuvio:: Cheese: " + data.cheese + ",  Tomato sauce: " + data.tomatoSauce + ", Ham length: " + data.ham.Length);
         }
 
-        private void label1_Click(object sender, EventArgs e)
+        public void SubscriberNewData(Subscriber sender, Ops.ParticipantInfoData data)
         {
-
+            Log("[Topic: " + sender.GetTopic().GetName() + "] IP: " + data.ip);
         }
 
     }
@@ -656,7 +663,7 @@ namespace OPSTest
                 {
                     Log("Dead Line Notification is disabled for Topic '" + mySub.GetTopic().GetName() + "'");
                 }
-                mySub.SetDeadlineQoS(deadLineEventInterval * 1000);
+                mySub.SetDeadlineQoS(deadLineEventInterval);
             }
             else
             {
@@ -687,6 +694,116 @@ namespace OPSTest
         private void SubscriberNewData(Subscriber sender, OPSObject data)
         {
             if (client != null) client.SubscriberNewData(sender, (T)data);
+        }
+    }
+
+    // ----------------------------------------------------------------------
+    /// <summary>
+    /// Helper class for listening to Participant info data
+    /// </summary>
+    class COpsHelperPartInfoData
+    {
+        private IOpsHelperCallback<Ops.ParticipantInfoData> client = null;
+        private Subscriber mySub = null;
+
+        // 
+        public COpsHelperPartInfoData(IOpsHelperCallback<Ops.ParticipantInfoData> client)
+        {
+            this.client = client;
+        }
+
+        // Internal logging method
+        private void Log(String str)
+        {
+            if (client != null) client.OnLog(str);
+        }
+
+        // 
+        public bool CreateSubscriber(Participant part)
+        {
+            if (mySub == null)
+            {
+                Topic topic = part.CreateParticipantInfoTopic();
+                if (topic == null)
+                {
+                    Log("No such Topic 'TBD'. Failed to create Subscriber!");
+                    return false;
+                }
+                else
+                {
+                    Log("[Topic: " + topic.GetName() + "] Subscriber on Transport: " + topic.GetTransport() + ", " + topic.GetDomainAddress() + "::" + topic.GetPort());
+                }
+                mySub = new Subscriber(topic);
+                mySub.newDataDefault += new NewDataDefaultEventHandler(SubscriberNewData);
+                StartSubscriber();
+            }
+            else
+            {
+                Log("Subscriber for Topic 'TBD' is already created!");
+            }
+            return true;    // mySub exists
+        }
+
+        // 
+        public void DeleteSubscriber()
+        {
+            if (mySub != null)
+            {
+                StopSubscriber();
+                mySub = null;
+            }
+            else
+            {
+                Log("Subscriber must be created first!");
+            }
+        }
+
+        // 
+        public void StartSubscriber()
+        {
+            if (mySub != null)
+            {
+                if (!mySub.Active)
+                {
+                    Log("Subscriber started for Topic '" + mySub.GetTopic().GetName() + "'");
+                    mySub.Start();
+                }
+                else
+                {
+                    Log("Subscriber is already started for Topic '" + mySub.GetTopic().GetName() + "'");
+                }
+            }
+            else
+            {
+                Log("Subscriber must be created first!");
+            }
+        }
+
+        //
+        public void StopSubscriber(bool doLog = true)
+        {
+            if (mySub != null)
+            {
+                if (mySub.Active)
+                {
+                    if (doLog) Log("Subscriber stopped for Topic '" + mySub.GetTopic().GetName() + "'");
+                    mySub.Stop();
+                }
+                else
+                {
+                    if (doLog) Log("Subscriber is already stopped for Topic '" + mySub.GetTopic().GetName() + "'");
+                }
+            }
+            else
+            {
+                if (doLog) Log("Subscriber must be created first!");
+            }
+        }
+
+        //
+        private void SubscriberNewData(Subscriber sender, OPSObject data)
+        {
+            if (client != null) client.SubscriberNewData(sender, (Ops.ParticipantInfoData)data);
         }
     }
 

@@ -13,14 +13,16 @@
         <!--optional <timeToLive>1</timeToLive>-->
         <!--optional <inSocketBufferSize>16000000</inSocketBufferSize>-->
         <!--optional <outSocketBufferSize>16000000</outSocketBufferSize>-->
-        <topics>
+		<!-- metaDataMcPort is necessary for UDP transport to work -->
+		<metaDataMcPort>9494</metaDataMcPort>
+		<topics>
           <!-- Multicast topics, different ports -->
           <element type = "Topic">
             <name>PizzaTopic</name>
             <port>6689</port>
             <dataType>pizza.PizzaData</dataType>
-          </element>
-          <element type = "Topic">
+		  </element>
+		  <element type = "Topic">
             <name>VessuvioTopic</name>
             <port>6690</port>
             <dataType>pizza.VessuvioData</dataType>
@@ -49,7 +51,7 @@
             <name>TcpPizzaTopic</name>
             <port>6689</port>
             <dataType>pizza.PizzaData</dataType>
-            <transport>tcp</transport>
+		    <transport>tcp</transport>
             <address>127.0.0.1</address>
           </element>
           <element type = "Topic">
@@ -82,7 +84,24 @@
             <address>127.0.0.1</address>
           </element>
 
-        </topics>
+			<!-- UDP topics, different ports -->
+			<element type = "Topic">
+				<name>UdpPizzaTopic</name>
+				<port>6789</port>
+				<dataType>pizza.PizzaData</dataType>
+				<transport>udp</transport>
+			</element>
+			<element type = "Topic">
+				<name>UdpVessuvioTopic</name>
+				<port>6790</port>
+				<dataType>pizza.VessuvioData</dataType>
+				<transport>udp</transport>
+				<sampleMaxSize>2100000</sampleMaxSize>
+				<inSocketBufferSize>16000000</inSocketBufferSize>
+				<outSocketBufferSize>16000000</outSocketBufferSize>
+			</element>
+
+		</topics>
       </element>
 
 
