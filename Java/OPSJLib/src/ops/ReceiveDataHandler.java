@@ -71,6 +71,11 @@ public class ReceiveDataHandler
 
     }
 
+    public int getSampleMaxSize()
+    {
+        return topic.getSampleMaxSize();
+    }
+
     public synchronized void addSubscriber(Subscriber sub)
     {
         subscribers.add(sub);
