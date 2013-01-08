@@ -350,6 +350,12 @@ namespace Ops
             return list;
         }
 
+        // NB! We assume that object "v" is a generic list.
+        public IList InoutSerializableList<T>(string name, IList v)
+        {
+            return InoutSerializableList(name, v);
+        }
+
     }
 
 }

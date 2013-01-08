@@ -170,6 +170,24 @@ namespace Ops
             return list;
         }
 
+        // NB! we assume that the object is a List<T> where T implements ISerializable.
+        // This method skips the factory for creating the elements 
+        public IList InoutSerializableList<T>(string name, IList v)
+        {
+            Type type = v.GetType().GetGenericArguments()[0];
+            IList list = (IList)Activator.CreateInstance((typeof(List<>).MakeGenericType(type)));
+            int size = readBuf.ReadInt();
+            for (int i = 0; i < size; i++)
+            {
+                // For each element
+                string dummy = readBuf.ReadString();
+                ISerializable obj = (ISerializable)Activator.CreateInstance<T>();
+                obj.Serialize(this);
+                list.Add(obj);
+            }
+            return list;
+        }
+
         /// 
 		/// <param name="name"></param>
 		/// <param name="v"></param>

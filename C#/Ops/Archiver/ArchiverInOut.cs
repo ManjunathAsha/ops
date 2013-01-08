@@ -91,6 +91,7 @@ namespace Ops
         /// <param name="name"></param>
         /// <param name="v"></param>
         IList InoutSerializableList(string name, IList v);
+        IList InoutSerializableList<T>(string name, IList v);
 
         /// 
 		/// <param name="name"></param>

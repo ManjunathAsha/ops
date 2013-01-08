@@ -402,6 +402,11 @@ namespace Ops
             return v;
         }
 
+        // NB! we assume that the object is a List<T> where T implements ISerializable.
+        public IList InoutSerializableList<T>(string name, IList v)
+        {
+            return InoutSerializableList(name, v);
+        }
 	}
 
 }
