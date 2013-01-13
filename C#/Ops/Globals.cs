@@ -13,6 +13,7 @@ namespace Ops
         public static bool BIG_ENDIAN = false;
         public static readonly int MAX_SEGMENT_SIZE = 60000;
         public static bool REPORT_DATA_FRAGMENT_LOST_ERRORS = true;
+        public static bool TRACE_RECEIVE = false;
     }
 
 }

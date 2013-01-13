@@ -58,6 +58,7 @@
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.textBoxSendPeriod = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.checkBoxEnableTrace = new System.Windows.Forms.CheckBox();
             this.groupBoxSetup.SuspendLayout();
             this.groupBoxMisc.SuspendLayout();
             this.groupBoxSubscriberSettings.SuspendLayout();
@@ -201,6 +202,7 @@
             // 
             // groupBoxMisc
             // 
+            this.groupBoxMisc.Controls.Add(this.checkBoxEnableTrace);
             this.groupBoxMisc.Controls.Add(this.buttonGCCollect);
             this.groupBoxMisc.Controls.Add(this.buttonStopTransport);
             this.groupBoxMisc.Controls.Add(this.buttonSaveParticipantConfiguration);
@@ -335,6 +337,17 @@
             this.label2.TabIndex = 20;
             this.label2.Text = "Send Period [ms]:";
             // 
+            // checkBoxEnableTrace
+            // 
+            this.checkBoxEnableTrace.AutoSize = true;
+            this.checkBoxEnableTrace.Location = new System.Drawing.Point(10, 111);
+            this.checkBoxEnableTrace.Name = "checkBoxEnableTrace";
+            this.checkBoxEnableTrace.Size = new System.Drawing.Size(90, 17);
+            this.checkBoxEnableTrace.TabIndex = 17;
+            this.checkBoxEnableTrace.Text = "Enable Trace";
+            this.checkBoxEnableTrace.UseVisualStyleBackColor = true;
+            this.checkBoxEnableTrace.CheckedChanged += new System.EventHandler(this.checkBoxEnableTrace_CheckedChanged);
+            // 
             // Form_TestOps
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -357,6 +370,7 @@
             this.Load += new System.EventHandler(this.Form_TestOps_Load);
             this.groupBoxSetup.ResumeLayout(false);
             this.groupBoxMisc.ResumeLayout(false);
+            this.groupBoxMisc.PerformLayout();
             this.groupBoxSubscriberSettings.ResumeLayout(false);
             this.groupBoxSubscriberSettings.PerformLayout();
             this.groupBox1.ResumeLayout(false);
@@ -396,6 +410,7 @@
         private System.Windows.Forms.CheckBox checkBox1;
         private System.Windows.Forms.TextBox textBoxSendPeriod;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.CheckBox checkBoxEnableTrace;
     }
 }
 

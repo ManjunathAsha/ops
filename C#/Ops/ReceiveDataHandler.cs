@@ -92,6 +92,12 @@ namespace Ops
         {
             try
             {
+                // Debug support
+                if (Globals.TRACE_RECEIVE)
+                {
+                    Logger.ExceptionLogger.LogMessage("TRACE: ReceiveDataHandler.OnNewBytes() [" + topic.GetName() + "], got " + size + " bytes");
+                }
+
                 bytesReceived += size - headerBytes.Length;
 
                 ReadByteBuffer readBuf = new ReadByteBuffer(headerBytes);

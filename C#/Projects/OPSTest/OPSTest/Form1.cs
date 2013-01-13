@@ -369,6 +369,11 @@ namespace OPSTest
             }
         }
 
+        private void checkBoxEnableTrace_CheckedChanged(object sender, EventArgs e)
+        {
+            Globals.TRACE_RECEIVE = checkBoxEnableTrace.Checked;
+        }
+
         // ---------------------------------------------------------------------------
         // Logging
 
