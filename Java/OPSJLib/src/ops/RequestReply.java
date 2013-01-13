@@ -44,7 +44,7 @@ public class RequestReply<ReqType extends Request, RepType extends Reply>
         this.nrResends = nrResends;
     }
 
-    public RequestReply(Topic reqTopic, Topic repTopic, String key) throws CommException
+    public RequestReply(Topic reqTopic, Topic repTopic, String key) throws CommException, ConfigurationException
     {
         publisher = new Publisher(reqTopic);
         subscriber = new Subscriber(repTopic);

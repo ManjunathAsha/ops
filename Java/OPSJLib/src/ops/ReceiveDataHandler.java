@@ -76,6 +76,16 @@ public class ReceiveDataHandler
         return topic.getSampleMaxSize();
     }
 
+    public String getTransport()
+    {
+        return topic.getTransport();
+    }
+
+    public synchronized int getNrOfSubscribers()
+    {
+        return subscribers.size();
+    }
+
     public synchronized void addSubscriber(Subscriber sub)
     {
         subscribers.add(sub);

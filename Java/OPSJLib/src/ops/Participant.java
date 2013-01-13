@@ -19,12 +19,16 @@
  */
 package ops;
 
+import java.lang.management.ManagementFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import configlib.SerializableFactory;
 import configlib.exception.FormatException;
 import java.io.File;
 import java.io.IOException;
 import ops.archiver.OPSObjectFactory;
 import ops.transport.inprocess.InProcessTransport;
+import ops.ConfigurationException;
 
 /**
  *
@@ -43,6 +47,10 @@ public class Participant
     private SendDataHandlerFactory sendDataHandlerFactory = new SendDataHandlerFactory();
     private InProcessTransport inProcessTransport = new InProcessTransport();
 
+    private final ParticipantInfoData partInfoData = new ParticipantInfoData();
+    private Publisher partInfoPub = null;
+    private boolean keepRunning = false;
+
     ///LA Added
     private OPSConfig config = null;
 
@@ -51,7 +59,7 @@ public class Participant
      * @param domainID
      * @return a Participant or null if this method fails.
      */
-    public static synchronized Participant getInstance(String domainID)
+    public static synchronized Participant getInstance(String domainID) throws ConfigurationException
     {
         return participantFactory.getParticipant(domainID, "DEFAULT_PARTICIPANT");
     }
@@ -62,7 +70,7 @@ public class Participant
      * @param participantID
      * @return a Participant or null if this method fails.
      */
-    public static synchronized Participant getInstance(String domainID, String participantID)
+    public static synchronized Participant getInstance(String domainID, String participantID) throws ConfigurationException
     {
         return participantFactory.getParticipant(domainID, participantID, null);
     }
@@ -76,7 +84,7 @@ public class Participant
      * participantID already exist.
      * @return a Participant or null if this method fails.
      */
-    public static synchronized Participant getInstance(String domainID, String participantID, File file)
+    public static synchronized Participant getInstance(String domainID, String participantID, File file) throws ConfigurationException
     {
         return participantFactory.getParticipant(domainID, participantID, file);
     }
@@ -87,35 +95,40 @@ public class Participant
         return participantFactory.getParticipant(domain, participantID);
     }
 
-    
-
-    protected Participant(String domainID, String participantID, File configFile)
+    protected Participant(String domainID, String participantID, File configFile) throws ConfigurationException
     {
         this.domainID = domainID;
         this.participantID = participantID;
         try
         {
-            ///LA made class member OPSConfig config;
             if (configFile == null)
             {
                 config = OPSConfig.getConfig();
                 domain = config.getDomain(domainID);
-            } else
+            }
+            else
             {
                 config = OPSConfig.getConfig(configFile);
                 domain = config.getDomain(domainID);
             }
-        } catch (IOException ex)
-        {
-            //TODO: rethrow
-            //config = null;
-        } catch (FormatException ex)
-        {
-            //config = null;
-            //TODO: rethrow
+            if (domain != null)
+            {
+                inProcessTransport.start();
+                setupCyclicThread();
+            }
+            else
+            {
+                throw new ConfigurationException("Participant(): Failed to find requested domain in configuration file");
+            }
         }
-        inProcessTransport.start();
-
+        catch (IOException ex)
+        {
+            throw new ConfigurationException("Participant(): Configuration file missing");
+        }
+        catch (FormatException ex)
+        {
+            throw new ConfigurationException("Participant(): Format error in Configuration file");
+        }
     }
 
     protected Participant(Domain domain, String participantID)
@@ -126,7 +139,7 @@ public class Participant
         this.domain = domain;
 
         inProcessTransport.start();
-
+        setupCyclicThread();
     }
 
     ///LA Added
@@ -137,6 +150,46 @@ public class Participant
     public OPSConfig getConfig()
     {
         return config;
+    }
+
+    // Initialize static data in partInfoData
+    private void initPartInfoData()
+    {
+        String processId = "";
+        String localhostname = "";
+        try
+        {
+            processId = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+            localhostname = java.net.InetAddress.getLocalHost().getHostName();
+        } catch (Exception e)
+        {
+        }
+        String Name = localhostname + " (" + processId + ")";
+
+        synchronized (partInfoData)
+        {
+            partInfoData.name = Name;
+            partInfoData.languageImplementation = "Java";
+            partInfoData.id = participantID;
+            partInfoData.domain = domainID;
+            partInfoData.ip = "";
+            partInfoData.opsVersion = "";
+        }
+    }
+
+    public void setUdpTransportInfo(String ip, int port)
+    {
+        synchronized (partInfoData)
+        {
+            partInfoData.ip = ip;
+            partInfoData.mc_udp_port = port;
+        }
+    }
+
+    //
+    public boolean hasPublisherOn(String topicName)
+    {
+        return true;    ///TODO
     }
 
     /**
@@ -207,18 +260,53 @@ public class Participant
         return topic;
     }
 
+    /**
+     * Creates a Topic that can be used to Subscribe to the participant info data
+     * @return a new Topic for the participant info data.
+     */
+    public Topic createParticipantInfoTopic()
+    {
+   	Topic infoTopic = new Topic("ops.bit.ParticipantInfoTopic", domain.GetMetaDataMcPort(), "ops.ParticipantInfoData", domain.getDomainAddress());
+    	infoTopic.setDomainID(domainID);
+        infoTopic.setParticipantID(participantID);
+	infoTopic.setTransport(Topic.TRANSPORT_MC);
+    	return infoTopic;
+    }
+
     ///By modified singelton
     synchronized ReceiveDataHandler getReceiveDataHandler(Topic top)
     {
-        return receiveDataHandlerFactory.getReceiveDataHandler(top, this);
-        
+        ReceiveDataHandler rdh = receiveDataHandlerFactory.getReceiveDataHandler(top, this);
+        if (rdh != null)
+        {
+            synchronized (partInfoData)
+            {
+                partInfoData.subscribeTopics.add(new TopicInfoData(top));
+            }
+        }
+        return rdh;
+    }
+
+    synchronized void releaseReceiveDataHandler(Topic topic)
+    {
+        receiveDataHandlerFactory.ReleaseReceiveDataHandler(topic, this);
+
+        synchronized (partInfoData)
+        {
+            for (int i = 0; i < partInfoData.subscribeTopics.size(); i++)
+            {
+    		if (partInfoData.subscribeTopics.elementAt(i).name.equals(topic.getName())) {
+                    partInfoData.subscribeTopics.remove(i);
+                    break;
+		}
+            }
+        }
     }
 
     ///By modified singelton
     synchronized SendDataHandler getSendDataHandler(Topic t) throws CommException
     {
         return sendDataHandlerFactory.getSendDataHandler(t, this);
-        
     }
 
     public Domain getDomain()
@@ -229,6 +317,52 @@ public class Participant
     public InProcessTransport getInProcessTransport()
     {
         return inProcessTransport;
+    }
+
+    private void setupCyclicThread()
+    {
+        keepRunning = true;
+        Thread thread = new Thread(new Runnable()
+        {
+            public void run()
+            {
+                initPartInfoData();
+
+                while (keepRunning)
+                {
+                    try
+                    {
+                        Thread.sleep(1000);
+
+                        // Create publisher for participant info data
+                        if ( (partInfoPub == null) && (domain.GetMetaDataMcPort() != 0) )
+                        {
+                            partInfoPub = new Publisher(createParticipantInfoTopic());
+                        }
+
+                        // Publish data
+                        if (partInfoPub != null)
+                        {
+                            synchronized (partInfoData)
+                            {
+                                partInfoPub.writeAsOPSObject(partInfoData);
+                            }
+                        }
+                    }
+                    catch (InterruptedException ex)
+                    {
+                        Logger.getLogger(Participant.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    catch (ConfigurationException ex)
+                    {
+                        Logger.getLogger(Participant.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        });
+
+        thread.setName("ParticipantThread_" + domainID + "_" + participantID);
+        thread.start();
     }
 
 }

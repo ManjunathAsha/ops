@@ -16,12 +16,12 @@ class ParticipantFactory
 
     private HashMap<String, Participant> instances = new HashMap<String, Participant>();
 
-    Participant getParticipant(String domainID, String participantID)
+    Participant getParticipant(String domainID, String participantID) throws ConfigurationException
     {
         return getParticipant(domainID, participantID, null);
     }
 
-    Participant getParticipant(String domainID, String participantID, File file)
+    Participant getParticipant(String domainID, String participantID, File file) throws ConfigurationException
     {
         String hashKey = domainID + " " + participantID;
 

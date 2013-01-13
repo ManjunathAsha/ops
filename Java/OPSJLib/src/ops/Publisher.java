@@ -50,7 +50,7 @@ public class Publisher
     private volatile long sampleTime2;
     private boolean started = false;
 
-    public Publisher(Topic topic)
+    public Publisher(Topic topic) throws ConfigurationException
     {
         this.topic = topic;
         bytes = new byte[topic.getSampleMaxSize()];

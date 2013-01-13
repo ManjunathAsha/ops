@@ -56,11 +56,10 @@ public class Subscriber extends Observable
     private volatile long sampleTime2;
     private final InProcessTransport inProcessTransport;
 
-    public Subscriber(Topic t)
+    public Subscriber(Topic t) throws ConfigurationException
     {
         this.topic = t;
         this.participant = Participant.getInstance(topic.getDomainID(), topic.getParticipantID());
-        receiveDataHandler = participant.getReceiveDataHandler(t);
         deadlineNotifier = DeadlineNotifier.getInstance();
         inProcessTransport = participant.getInProcessTransport();
     }
@@ -104,6 +103,7 @@ public class Subscriber extends Observable
         lastDeadlineTime = System.currentTimeMillis();
         timeLastDataForTimeBase = System.currentTimeMillis();
         setDeadlineQoS(deadlineTimeout);
+        receiveDataHandler = participant.getReceiveDataHandler(topic);
         receiveDataHandler.addSubscriber(this);
         inProcessTransport.addSubscriber(this);
     }
@@ -117,7 +117,10 @@ public class Subscriber extends Observable
     {
         deadlineNotifier.remove(this);
         inProcessTransport.removeSubscriber(this);
-        return receiveDataHandler.removeSubscriber(this);
+        boolean retVal = receiveDataHandler.removeSubscriber(this);
+        receiveDataHandler = null;
+        participant.releaseReceiveDataHandler(topic);
+        return retVal;
     }
 
     public synchronized boolean isDeadlineMissed()
