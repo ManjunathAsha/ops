@@ -88,18 +88,27 @@ namespace Ops
                     this.config = OPSConfig.GetConfig(configFile);
                     this.domain = this.config.GetDomain(domainID);
                 }
-            } catch (IOException)
+                if (this.domain != null)
+                {
+                    this.inProcessTransport.Start();
+                    SetupCyclicThread();
+                }
+                else
+                {
+                    Logger.ExceptionLogger.LogMessage(this.GetType().Name + ", Failed to find requested domain in configuration file");
+                    throw new System.Exception("Failed to find requested domain in configuration file");
+                }
+            }
+            catch (IOException)
             {
-                //TODO: rethrow
-                //config = null;
+                Logger.ExceptionLogger.LogMessage(this.GetType().Name + ", Configuration file missing");
+                throw;
             }
             catch (Ops.FormatException)
             {
-                //config = null;
-                //TODO: rethrow
+                Logger.ExceptionLogger.LogMessage(this.GetType().Name + ", Format error in configuration file");
+                throw;
             }
-            this.inProcessTransport.Start();
-            SetupCyclicThread();
         }
 
         public Participant(Domain domain, string participantID)
@@ -258,7 +267,7 @@ namespace Ops
                 }
 
                 // Publish data
-                if (partInfoData != null)
+                if (partInfoPub != null)
                 {
                     lock (partInfoData)
                     {
