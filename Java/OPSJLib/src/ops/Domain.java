@@ -30,11 +30,15 @@ import java.util.Vector;
  */
 public class Domain extends OPSObject
 {
-
     private String domainAddress = "";
     private String domainID = "";
     private String localInterface = "0.0.0.0";
     protected Vector<Topic> topics = new Vector<Topic>();
+    private int timeToLive = 1;
+    private int inSocketBufferSize = 16000000;
+    private int outSocketBufferSize = 16000000;
+    private int metaDataMcPort = 9494;
+
 
     public Domain()
     {
@@ -61,10 +65,28 @@ public class Domain extends OPSObject
     @Override
     public void serialize(ArchiverInOut archive) throws IOException
     {
-        domainAddress = archive.inout("domainAddress", domainAddress);
+        // NOTE. Keep this in sync with the C++ version, so it in theory is possible to send these as objects.
+        // We need to serialize fields in the same order as C++.
+        //OPSObject::serialize(archiver);
+        super.serialize(archive);
+
+        //archiver->inout(std::string("domainID"), domainID);
+        //archiver->inout<Topic>(std::string("topics"), topics);
+        //archiver->inout(std::string("domainAddress"), domainAddress);
+        //archiver->inout(std::string("localInterface"), localInterface);
         domainID = archive.inout("domainID", domainID);
         topics = (Vector<Topic>) archive.inoutSerializableList("topics", topics);
+        domainAddress = archive.inout("domainAddress", domainAddress);
         localInterface = archive.inout("localInterface", localInterface);
+
+        //archiver->inout(std::string("timeToLive"), timeToLive);
+        //archiver->inout(std::string("inSocketBufferSize"), inSocketBufferSize);
+        //archiver->inout(std::string("outSocketBufferSize"), outSocketBufferSize);
+        //archiver->inout(std::string("metaDataMcPort"), metaDataMcPort);
+        timeToLive = archive.inout("timeToLive", timeToLive);
+	inSocketBufferSize = archive.inout("inSocketBufferSize", inSocketBufferSize);
+    	outSocketBufferSize = archive.inout("outSocketBufferSize", outSocketBufferSize);
+        metaDataMcPort = archive.inout("metaDataMcPort", metaDataMcPort);
     }
 
 
@@ -98,6 +120,26 @@ public class Domain extends OPSObject
         return localInterface;
     }
 
+    public int GetMetaDataMcPort()
+    {
+        return metaDataMcPort;
+    }
+
+    public int GetInSocketBufferSize()
+    {
+        return inSocketBufferSize;
+    }
+
+    public int GetOutSocketBufferSize()
+    {
+        return outSocketBufferSize;
+    }
+
+    public int getTimeToLive()
+    {
+        return timeToLive;
+    }
+
     public void setDomainAddress(String domainAddress) {
         this.domainAddress = domainAddress;
     }
@@ -109,8 +151,5 @@ public class Domain extends OPSObject
     public void setLocalInterface(String localInterface) {
         this.localInterface = localInterface;
     }
-
-
-
 
 }
