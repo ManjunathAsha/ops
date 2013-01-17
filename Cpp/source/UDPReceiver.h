@@ -226,7 +226,8 @@ namespace ops
 			/// The UDP Receiver is open the whole life time
 			// Cancel the asynch_receive()
             cancelled = true;
-			sock->cancel();
+			//sock->cancel(); ///FAILS ON WIN XP
+			sock->close();
 
 			/// We must handle asynchronous callbacks that haven't finished yet.
 			/// This approach works, but the recommended boost way is to use a shared pointer to the instance object
