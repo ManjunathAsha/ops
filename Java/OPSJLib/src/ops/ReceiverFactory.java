@@ -26,7 +26,11 @@ class ReceiverFactory
             {
                 return new TcpClientReceiver(topic.getDomainAddress(), topic.getPort(), topic.getInSocketBufferSize());
             }
-
+            else if (topic.getTransport().equals(Topic.TRANSPORT_UDP))
+            {
+                // We need the system to allocate a port (port == 0 means let system allocate a free one)
+                return new UDPReceiver(0, localInterface, topic.getInSocketBufferSize());
+            }
         }
         catch (IOException ex)
         {

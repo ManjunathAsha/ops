@@ -33,6 +33,7 @@ class ReceiveDataHandlerFactory
         }
     }
 
+    /// Protection is not needed since all calls go through the participant which is synched
     ReceiveDataHandler getReceiveDataHandler(Topic top, Participant participant)
     {
         // In the case that we use the same port for several topics, we need to find the receiver for the transport::address::port used
@@ -46,10 +47,20 @@ class ReceiveDataHandlerFactory
             // This will lead to a problem when using the same port, if samples becomes > MAX_SIZE
             if ((rdh.getSampleMaxSize() > StaticManager.MAX_SIZE) || (top.getSampleMaxSize() > StaticManager.MAX_SIZE))
             {
-                Logger.getLogger(ReceiveDataHandlerFactory.class.getName()).log(
+                if (top.getTransport().equals(Topic.TRANSPORT_UDP))
+                {
+                    Logger.getLogger(ReceiveDataHandlerFactory.class.getName()).log(
+                        Level.WARNING,
+                        "Warning: UDP transport is used with Topics with ''sampleMaxSize'' > {0}",
+                        StaticManager.MAX_SIZE);
+                }
+                else
+                {
+                    Logger.getLogger(ReceiveDataHandlerFactory.class.getName()).log(
                         Level.WARNING, 
                         "Same port ({0}) is used with Topics with ''sampleMaxSize'' > {1}",
                         new Object[]{top.getPort(), StaticManager.MAX_SIZE});
+                }
             }
             return rdh;
         }
@@ -61,12 +72,12 @@ class ReceiveDataHandlerFactory
         }
         else if (top.getTransport().equals(Topic.TRANSPORT_UDP))
         {
-//TODO            IReceiver rec = ReceiverFactory.CreateReceiver(top, participant.getDomain().GetLocalInterface());
-//            ReceiveDataHandlers.Add(key, new ReceiveDataHandler(top, participant, rec));
-//
-//            participant.setUdpTransportInfo(((UdpReceiver)rec).IP, ((UdpReceiver)rec).Port);
-//
-//            return receiveDataHandlers.get(key);
+            Receiver rec = ReceiverFactory.createReceiver(top, participant.getDomain().getLocalInterface());
+            receiveDataHandlers.put(key, new ReceiveDataHandler(top, participant, rec));
+
+            participant.setUdpTransportInfo(((UDPReceiver)rec).getIP(), ((UDPReceiver)rec).getPort());
+
+            return receiveDataHandlers.get(key);
         }
         return null;
     }
