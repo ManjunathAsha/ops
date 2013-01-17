@@ -20,16 +20,83 @@
 
 package ops;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.SocketAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+
 /**
  *
  * @author Anton Gravestam
  */
-public class UDPSender
+public class UDPSender implements Sender
 {
+    private DatagramSocket udpSocket;
+    private int port;
+    private int outSocketBufferSize;
+    private boolean opened = false;
+    private SocketAddress ipEndPoint;
+
     
-    /** Creates a new instance of UDPSender */
-    public UDPSender()
+    public UDPSender(int port, String localInterface, int outSocketBufferSize) throws IOException
     {
+        this.ipEndPoint = new InetSocketAddress(localInterface, port);
+        this.outSocketBufferSize = outSocketBufferSize;
+        open();
     }
     
+    public final void open() throws IOException
+    {
+        if (!opened) {
+            udpSocket = new DatagramSocket(this.ipEndPoint);
+
+            if (outSocketBufferSize > 0)
+            {
+                udpSocket.setSendBufferSize(outSocketBufferSize);
+            }
+            opened = true;
+        }
+    }
+
+    public void close()
+    {
+        if (opened) {
+            udpSocket.close();
+            opened = false;
+        }
+    }
+
+    public boolean sendTo(byte[] bytes, int offset, int size, String ip, int port)
+    {
+        try
+        {
+            return this.sendTo(bytes, offset, size, InetAddress.getByName(ip), port);
+        } catch (UnknownHostException ex)
+        {
+            return false;
+        }
+    }
+
+    public boolean sendTo(byte[] bytes, int offset, int size, InetAddress ipAddress, int port)
+    {
+        try
+        {
+            DatagramPacket datagramPacket = new DatagramPacket(bytes, offset, size, ipAddress, port);
+            udpSocket.send(datagramPacket);
+            return true;
+        } catch (IOException ex)
+        {
+            return false;
+        }
+    }
+
+    public boolean sendTo(byte[] bytes, String ip, int port)
+    {
+        return this.sendTo(bytes, 0, bytes.length, ip, port);
+
+    }
 }

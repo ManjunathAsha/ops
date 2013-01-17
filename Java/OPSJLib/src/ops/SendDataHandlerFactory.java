@@ -5,6 +5,8 @@
 
 package ops;
 
+import java.util.Observable;
+import java.util.Observer;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -15,6 +17,10 @@ import java.util.HashMap;
 class SendDataHandlerFactory
 {
     private HashMap<String, SendDataHandler> sendDataHandlers = new HashMap<String, SendDataHandler>();
+
+    private McUdpSendDataHandler udpSendDataHandler = null;
+    private ParticipantInfoDataListener partInfoListener = null;
+    private Subscriber partInfoSub = null;
 
     SendDataHandler getSendDataHandler(Topic t, Participant participant) throws CommException
     {
@@ -42,6 +48,41 @@ class SendDataHandlerFactory
                 sendDataHandlers.put(key, sender);
                 return sender;
             }
+
+            // We don't want to add the udp handler to the handler list, so handle this last
+            if(t.getTransport().equals(Topic.TRANSPORT_UDP))
+            {
+                if (udpSendDataHandler == null)
+                {
+                    // We have only one sender for all topics, so use the domain value for buffer size
+                    udpSendDataHandler = new McUdpSendDataHandler(
+                        participant.getDomain().GetOutSocketBufferSize(),
+                        participant.getDomain().getLocalInterface());
+
+                    // Setup a listener on the participant info data published by participants on our domain.
+                    // We use the information for topics with UDP as transport, to know the destination for UDP sends
+                    // ie. we extract ip and port from the information and add it to our McUdpSendDataHandler
+                    partInfoListener = new ParticipantInfoDataListener(participant, udpSendDataHandler);
+
+                    try
+                    {
+                        partInfoSub = new Subscriber(participant.createParticipantInfoTopic());
+                        //Add a listener to the subscriber
+                        partInfoSub.addObserver(new Observer() {
+                            public void update(Observable o, Object arg)
+                            {
+                                if (partInfoListener != null) partInfoListener.SubscriberNewData(partInfoSub, partInfoSub.getMessage().getData());
+                            }
+                        });
+                        partInfoSub.start();
+                    }
+                    catch (ConfigurationException e)
+                    {
+                    }
+                }
+                return udpSendDataHandler;
+            }
+
             throw new CommException("No such Transport " + t.getTransport());
         }
         catch (IOException ex)
