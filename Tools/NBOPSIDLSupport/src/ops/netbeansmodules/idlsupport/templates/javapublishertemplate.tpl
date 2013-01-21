@@ -8,7 +8,7 @@ import ops.Topic;
 
 public class __classNamePublisher extends Publisher 
 {
-    public __classNamePublisher(Topic<__className> t)
+    public __classNamePublisher(Topic<__className> t) throws ops.ConfigurationException
     {
         super(t);
     }

@@ -32,6 +32,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.plaf.basic.BasicButtonUI;
+import ops.ConfigurationException;
 import ops.OPSObject;
 import ops.Participant;
 import ops.Subscriber;
@@ -160,21 +161,22 @@ final class OPSDebuggerTopComponent extends TopComponent
     {//GEN-HEADEREND:event_openButtonActionPerformed
         if (opsFactory != null)
         {
+            try
+            {
+                Participant participant = Participant.getInstance(domainTextField.getText());
+                Topic topic = participant.createTopic((String)topicComboBox.getSelectedItem());
+                subscriber = opsFactory.createSubscriber((String)topicComboBox.getSelectedItem());
 
-            Participant participant = Participant.getInstance(domainTextField.getText());
-            Topic topic = participant.createTopic((String)topicComboBox.getSelectedItem());
-            subscriber = opsFactory.createSubscriber((String)topicComboBox.getSelectedItem());
+                TreeModelImpl tm = new TreeModelImpl(subscriber);
 
-            TreeModelImpl tm = new TreeModelImpl(subscriber);
+                ColumnModel cm2 = new ValueColumnModel();
 
-            ColumnModel cm2 = new ValueColumnModel();
+                TableModel tbm = new TableModelImpl();
 
-            TableModel tbm = new TableModelImpl();
+                NodeModel nm = new NodeModelImpl();
+                TreeExpansionModel tem = new TreeExpansionModelImpl();
 
-            NodeModel nm = new NodeModelImpl();
-            TreeExpansionModel tem = new TreeExpansionModelImpl();
-
-            JComponent treeView = Models.createView(
+                JComponent treeView = Models.createView(
                     Models.createCompoundModel(
                     Arrays.asList(new Model[]
                     {
@@ -186,12 +188,13 @@ final class OPSDebuggerTopComponent extends TopComponent
                         cm2
                     })));
 
-            tabbedPane.addTab(topic.getName() + ":" + domainTextField.getText() + "(" + topic.getDomainAddress() + ")", treeView);
+                tabbedPane.addTab(topic.getName() + ":" + domainTextField.getText() + "(" + topic.getDomainAddress() + ")", treeView);
 
-            tabbedPane.setTabComponentAt(tabbedPane.indexOfComponent(treeView), new ButtonTabComponent(tabbedPane));
-
-
-
+                tabbedPane.setTabComponentAt(tabbedPane.indexOfComponent(treeView), new ButtonTabComponent(tabbedPane));
+            }
+            catch (ConfigurationException e)
+            {
+            }
 
         }
     }//GEN-LAST:event_openButtonActionPerformed

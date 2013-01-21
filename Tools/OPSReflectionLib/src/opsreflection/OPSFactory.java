@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Vector;
+import ops.ConfigurationException;
 import ops.Domain;
 import ops.OPSObject;
 import ops.Participant;
@@ -42,8 +43,14 @@ public class OPSFactory
     {
         
         TypeSupportImpl typeSupport = new TypeSupportImpl();
-        participant = Participant.getInstance(domainID);
-        participant.addTypeSupport(typeSupport);
+        try
+        {
+            participant = Participant.getInstance(domainID);
+            participant.addTypeSupport(typeSupport);
+        }
+        catch (ConfigurationException e)
+        {
+        }
         this.domainID = factoryConfig.domainID;
     }
     public OPSFactory(File configFile) throws FileNotFoundException, FormatException, IOException
@@ -57,13 +64,16 @@ public class OPSFactory
         {
             jarSearcher.addJar(new File(configFile.getParentFile().getPath() + "/" + file.getPath()));
         }
-        participant = Participant.getInstance(domainID, "DEFAULT_PARTICIPANT", new File(configFile.getParentFile().getPath() + "/" + factoryConfig.opsConfigRelativePath));
+        try
+        {
+            participant = Participant.getInstance(domainID, "DEFAULT_PARTICIPANT", new File(configFile.getParentFile().getPath() + "/" + factoryConfig.opsConfigRelativePath));
         
-        TypeSupportImpl typeSupport = new TypeSupportImpl();
-        participant.addTypeSupport(typeSupport);
-
-
-
+            TypeSupportImpl typeSupport = new TypeSupportImpl();
+            participant.addTypeSupport(typeSupport);
+        }
+        catch (ConfigurationException e)
+        {
+        }
     }
 
 

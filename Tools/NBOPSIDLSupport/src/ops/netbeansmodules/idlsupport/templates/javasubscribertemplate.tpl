@@ -10,7 +10,7 @@ import ops.OPSTopicTypeMissmatchException;
 
 public class __classNameSubscriber extends Subscriber 
 {
-    public __classNameSubscriber(Topic<__className> t) //throws ops.OPSTopicTypeMissmatchException
+    public __classNameSubscriber(Topic<__className> t) throws ops.ConfigurationException
     {
         super(t);
 
