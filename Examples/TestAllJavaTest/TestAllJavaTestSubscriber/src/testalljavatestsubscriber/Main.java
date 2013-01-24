@@ -9,6 +9,9 @@ import TestAll.ChildData;
 import TestAll.ChildDataSubscriber;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import ops.ConfigurationException;
 import ops.Participant;
 import ops.Topic;
 import ops.protocol.OPSMessage;
@@ -25,22 +28,29 @@ public class Main {
         // TODO code application logic here
         //OPSObjectFactory.getInstance().add(new TestAll.TestAllTypeFactory());
 
-        Participant participant = Participant.getInstance("TestAllDomain");
-        participant.addTypeSupport(new TestAll.TestAllTypeFactory());
-
-        Topic topic = participant.createTopic("ChildTopic");
-
-        sub = new ChildDataSubscriber(topic);
-
-        sub.addObserver(new Observer() { public void update(Observable o, Object arg){onNewChildData((ChildData)arg);} });
-
-        sub.start();
-
-        while (true)
+        try
         {
-            sleep(1000);
-        }
+            Participant participant = Participant.getInstance("TestAllDomain");
+            participant.addTypeSupport(new TestAll.TestAllTypeFactory());
 
+            Topic topic = participant.createTopic("ChildTopic");
+
+            sub = new ChildDataSubscriber(topic);
+
+            sub.addObserver(new Observer() { public void update(Observable o, Object arg){onNewChildData((ChildData)arg);} });
+
+            sub.start();
+
+            while (true)
+            {
+                sleep(1000);
+            }
+
+        }
+        catch (ops.ConfigurationException ex)
+        {
+           Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     private static void onNewChildData(ChildData childData)
     {

@@ -10,6 +10,7 @@ import TestAll.ChildDataPublisher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import ops.CommException;
+import ops.ConfigurationException;
 import ops.Participant;
 import ops.Topic;
 
@@ -39,7 +40,7 @@ public class Main {
             data.f = 2.0f;
             data.d = 3.0;
             data.bs.add((byte) 4);
-            data.is.add(5);
+            data.is_.add(5);
             data.ls.add((long) 7);
             data.ss.add("TestString in Array.");
             for (int i = 0; i < 50; i++)
@@ -52,10 +53,10 @@ public class Main {
                 pub.write(data);
                 sleep(1000);
             }
-        } catch (CommException ex)
-        {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        }
+       } catch (ops.ConfigurationException ex)
+       {
+           Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+       }
 
     }
 
