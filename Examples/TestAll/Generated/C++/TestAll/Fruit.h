@@ -1,7 +1,7 @@
 //Auto generated OPS-code. DO NOT MODIFY!
 
-#ifndef __underscoredPackName_Fruit_h
-#define __underscoredPackName_Fruit_h
+#ifndef TestAll_Fruit_h
+#define TestAll_Fruit_h
 
 #include "OPSObject.h"
 #include "ArchiverInOut.h"
@@ -36,7 +36,7 @@ public:
     void serialize(ops::ArchiverInOut* archive)
     {
         ops::OPSObject::serialize(archive);
-        archive.inout("value", value);
+        archive->inout(std::string("value"), value);
     }
 
 

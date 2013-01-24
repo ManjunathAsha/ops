@@ -4,30 +4,49 @@ package TestAll;
 //including aggregating a third data type TestData
 class ChildData extends BaseData
 {
+    /* */
     boolean bo;
+    /* */
     byte b;
+    /* */
     int i;
+    /* */
     long l;
+    /* */
     float f;
+    /* */
     double d;
 
-    /*This string shall hold the word World*/
+    /* This string shall hold the word World */
     string s;
-    
+
+    /* */
     TestData test2;
+    /* */
     virtual TestAll.TestData testPointer;
 
+    /* */
     Fruit fruit;
     //TestMore.MoreData more;
 
+    /* */
     boolean[] bos;
+    /* */
     byte[] bs;
-    int[] is;
+    /* */
+    int[] is_;
+    /* */
     long[] ls;
+    /* */
     float[] fs;
+    /* */
     double[] ds;
+    /* */
     string[] ss;
+    /* */
     virtual TestData[] test2s;
+    /* */
     virtual TestData[] secondVirtArray;
+    /* */
     TestData[] test2s2;
 }

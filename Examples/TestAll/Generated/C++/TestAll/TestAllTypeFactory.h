@@ -8,9 +8,9 @@
 #include "SerializableFactory.h"
 #include <string>
 
-#include "TestAll/TestData.h"
-#include "TestAll/BaseData.h"
 #include "TestAll/ChildData.h"
+#include "TestAll/BaseData.h"
+#include "TestAll/TestData.h"
 #include "TestAll/Fruit.h"
 
 
@@ -22,17 +22,17 @@ class TestAllTypeFactory : public ops::SerializableFactory
 public:
     ops::Serializable* create(std::string& type)
     {
-		if(type == "TestAll.TestData")
+		if(type == "TestAll.ChildData")
 		{
-			return new TestAll::TestData();
+			return new TestAll::ChildData();
 		}
 		if(type == "TestAll.BaseData")
 		{
 			return new TestAll::BaseData();
 		}
-		if(type == "TestAll.ChildData")
+		if(type == "TestAll.TestData")
 		{
-			return new TestAll::ChildData();
+			return new TestAll::TestData();
 		}
 		if(type == "TestAll.Fruit")
 		{

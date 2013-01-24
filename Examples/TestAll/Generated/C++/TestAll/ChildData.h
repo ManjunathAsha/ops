@@ -23,26 +23,45 @@ class ChildData :
 public:
    static std::string getTypeName(){return std::string("TestAll.ChildData");}
 	
+	/// 
 	bool bo;
+	/// 
 	char b;
+	/// 
 	int i;
+	/// 
 	__int64 l;
+	/// 
 	float f;
+	/// 
 	double d;
-	///This string shall hold the word World
+	/// This string shall hold the word World 
 	std::string s;
+	/// 
 	TestData test2;
+	/// 
 	TestAll::TestData* testPointer;
+	/// 
 	Fruit fruit;
+	/// 
 	std::vector<bool> bos;
+	/// 
 	std::vector<char> bs;
-	std::vector<int> is;
+	/// 
+	std::vector<int> is_;
+	/// 
 	std::vector<__int64> ls;
+	/// 
 	std::vector<float> fs;
+	/// 
 	std::vector<double> ds;
+	/// 
 	std::vector<std::string> ss;
+	/// 
 	std::vector<TestData*> test2s;
+	/// 
 	std::vector<TestData*> secondVirtArray;
+	/// 
 	std::vector<TestData> test2s2;
 
     ///Default constructor.
@@ -90,7 +109,7 @@ public:
 		archive->inout(std::string("fruit"), fruit);
 		archive->inout(std::string("bos"), bos);
 		archive->inout(std::string("bs"), bs);
-		archive->inout(std::string("is"), is);
+		archive->inout(std::string("is_"), is_);
 		archive->inout(std::string("ls"), ls);
 		archive->inout(std::string("fs"), fs);
 		archive->inout(std::string("ds"), ds);
@@ -126,7 +145,7 @@ public:
 		narrRet->fruit = fruit;
 		narrRet->bos = bos;
 		narrRet->bs = bs;
-		narrRet->is = is;
+		narrRet->is_ = is_;
 		narrRet->ls = ls;
 		narrRet->fs = fs;
 		narrRet->ds = ds;
