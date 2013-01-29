@@ -10,7 +10,7 @@ import ops.OPSTopicTypeMissmatchException;
 
 public class LHCDataSubscriber extends Subscriber 
 {
-    public LHCDataSubscriber(Topic<LHCData> t) //throws ops.OPSTopicTypeMissmatchException
+    public LHCDataSubscriber(Topic<LHCData> t) throws ops.ConfigurationException
     {
         super(t);
 

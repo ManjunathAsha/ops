@@ -8,7 +8,7 @@ import ops.Topic;
 
 public class ExtraAlltPublisher extends Publisher 
 {
-    public ExtraAlltPublisher(Topic<ExtraAllt> t)
+    public ExtraAlltPublisher(Topic<ExtraAllt> t) throws ops.ConfigurationException
     {
         super(t);
     }

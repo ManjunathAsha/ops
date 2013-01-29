@@ -8,7 +8,7 @@ import ops.Topic;
 
 public class LHCDataPublisher extends Publisher 
 {
-    public LHCDataPublisher(Topic<LHCData> t)
+    public LHCDataPublisher(Topic<LHCData> t) throws ops.ConfigurationException
     {
         super(t);
     }

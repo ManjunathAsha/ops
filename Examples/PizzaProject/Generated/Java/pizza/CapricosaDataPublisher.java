@@ -8,7 +8,7 @@ import ops.Topic;
 
 public class CapricosaDataPublisher extends Publisher 
 {
-    public CapricosaDataPublisher(Topic<CapricosaData> t)
+    public CapricosaDataPublisher(Topic<CapricosaData> t) throws ops.ConfigurationException
     {
         super(t);
     }

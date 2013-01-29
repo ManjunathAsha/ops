@@ -10,7 +10,7 @@ import ops.OPSTopicTypeMissmatchException;
 
 public class ExtraAlltSubscriber extends Subscriber 
 {
-    public ExtraAlltSubscriber(Topic<ExtraAllt> t) //throws ops.OPSTopicTypeMissmatchException
+    public ExtraAlltSubscriber(Topic<ExtraAllt> t) throws ops.ConfigurationException
     {
         super(t);
 

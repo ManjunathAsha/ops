@@ -10,7 +10,7 @@ import ops.OPSTopicTypeMissmatchException;
 
 public class CapricosaDataSubscriber extends Subscriber 
 {
-    public CapricosaDataSubscriber(Topic<CapricosaData> t) //throws ops.OPSTopicTypeMissmatchException
+    public CapricosaDataSubscriber(Topic<CapricosaData> t) throws ops.ConfigurationException
     {
         super(t);
 

@@ -13,23 +13,21 @@
                 <!--optional <timeToLive>1</timeToLive>-->
                 <localInterface>127.0.0.1</localInterface>
                 <!--optional <inSocketBufferSize>16000000</inSocketBufferSize>-->
-                <outSocketBufferSize>160000</outSocketBufferSize>
+                <!--optional <outSocketBufferSize>16000000</outSocketBufferSize>-->
                 <topics>
                     <element type = "Topic">
                         <name>ChildTopic</name>
-                        <port>36689</port>
+                        <port>6689</port>
                         <dataType>TestAll.ChildData</dataType>
-                        <!--<sampleMaxSize>2100000</sampleMaxSize>-->
-                        <outSocketBufferSize>2600000</outSocketBufferSize>
-                        <inSocketBufferSize>1600000</inSocketBufferSize>
+                        <sampleMaxSize>2100000</sampleMaxSize>
+                         <inSocketBufferSize>16000000</inSocketBufferSize>
+                         <outSocketBufferSize>16000000</outSocketBufferSize>
                     </element>
                     <element type = "Topic">
-                        <name>BaseTopic</name>
-                        <port>36689</port>
-                        <dataType>TestAll.BaseData</dataType>
-                        <outSocketBufferSize>2600000</outSocketBufferSize>
-                        <inSocketBufferSize>1600000</inSocketBufferSize>
-                      </element>
+                      <name>BaseTopic</name>
+                      <port>6687</port>
+                      <dataType>TestAll.BaseData</dataType>
+                    </element>
                     <!-- TODO: Add more topics here... -->
                 </topics>
             </element>

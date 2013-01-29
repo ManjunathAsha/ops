@@ -8,7 +8,7 @@ import ops.Topic;
 
 public class VessuvioDataPublisher extends Publisher 
 {
-    public VessuvioDataPublisher(Topic<VessuvioData> t)
+    public VessuvioDataPublisher(Topic<VessuvioData> t) throws ops.ConfigurationException
     {
         super(t);
     }

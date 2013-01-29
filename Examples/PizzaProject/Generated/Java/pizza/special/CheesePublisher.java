@@ -8,7 +8,7 @@ import ops.Topic;
 
 public class CheesePublisher extends Publisher 
 {
-    public CheesePublisher(Topic<Cheese> t)
+    public CheesePublisher(Topic<Cheese> t) throws ops.ConfigurationException
     {
         super(t);
     }

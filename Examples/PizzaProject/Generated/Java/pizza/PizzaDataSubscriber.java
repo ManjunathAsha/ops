@@ -10,7 +10,7 @@ import ops.OPSTopicTypeMissmatchException;
 
 public class PizzaDataSubscriber extends Subscriber 
 {
-    public PizzaDataSubscriber(Topic<PizzaData> t) //throws ops.OPSTopicTypeMissmatchException
+    public PizzaDataSubscriber(Topic<PizzaData> t) throws ops.ConfigurationException
     {
         super(t);
 

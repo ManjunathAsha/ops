@@ -1,18 +1,18 @@
 //Auto generated OPS-code. !DO NOT MODIFY!
 
-package pizza;
+package TestAll;
 
 import ops.Publisher;
 import ops.OPSObject;
 import ops.Topic;
 
-public class PizzaDataPublisher extends Publisher 
+public class BaseDataPublisher extends Publisher 
 {
-    public PizzaDataPublisher(Topic<PizzaData> t) throws ops.ConfigurationException
+    public BaseDataPublisher(Topic<BaseData> t) throws ops.ConfigurationException
     {
         super(t);
     }
-    public void write(PizzaData o) 
+    public void write(BaseData o) 
     {
         super.write(o);
     }    

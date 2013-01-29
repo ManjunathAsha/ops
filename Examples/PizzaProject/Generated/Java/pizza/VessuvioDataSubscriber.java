@@ -10,7 +10,7 @@ import ops.OPSTopicTypeMissmatchException;
 
 public class VessuvioDataSubscriber extends Subscriber 
 {
-    public VessuvioDataSubscriber(Topic<VessuvioData> t) //throws ops.OPSTopicTypeMissmatchException
+    public VessuvioDataSubscriber(Topic<VessuvioData> t) throws ops.ConfigurationException
     {
         super(t);
 
