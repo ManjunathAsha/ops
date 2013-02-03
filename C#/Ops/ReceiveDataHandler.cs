@@ -80,8 +80,8 @@ namespace Ops
             if (subscribers.Count == 0)
             {
                 receiver.GetNewBytesEvent().DeleteObserver(this);
-                receiver.Close();
                 hasSubscribers = false;
+                receiver.Close();
             }
 
             return result;
