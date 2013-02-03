@@ -20,6 +20,7 @@
 #include "OPSTypeDefs.h"
 #include "Domain.h"
 #include "NoSuchTopicException.h"
+#include "BoostIOServiceImpl.h"
 
 namespace ops
 {
@@ -119,9 +120,46 @@ int Domain::getMetaDataMcPort()
 	return metaDataMcPort;
 }
 
-Domain::~Domain(){}
+Domain::~Domain()
+{
+}
 
+// If argument contains a "/" we assume it is on the form:  subnet-address/subnet-mask
+// In that case we loop over all interfaces and take the first one that matches
+// i.e. the one whos interface address is on the subnet
+std::string Domain::doSubnetTranslation(std::string addr, IOService* ioServ)
+{
+	using boost::asio::ip::udp;
 
+	std::basic_string <char>::size_type index;
+
+	index = addr.find("/");
+	if (index == std::string::npos) return addr;
+
+	std::string subnet = addr.substr(0, index);
+	std::string mask = addr.substr(index+1);
+
+	unsigned long subnetIp = boost::asio::ip::address_v4::from_string(subnet).to_ulong();
+	unsigned long subnetMask = boost::asio::ip::address_v4::from_string(mask).to_ulong();
+
+	boost::asio::io_service* ioService = ((BoostIOServiceImpl*) ioServ)->boostIOService;
+
+	udp::resolver resolver(*ioService);
+    udp::resolver::query query(boost::asio::ip::host_name(), "");
+    udp::resolver::iterator it = resolver.resolve(query);
+    udp::resolver::iterator end;
+    while (it != end) {
+		boost::asio::ip::address ipaddr = it->endpoint().address();
+	    if (ipaddr.is_v4())	{
+			unsigned long Ip = ipaddr.to_v4().to_ulong();
+			if ((Ip & subnetMask) == subnetIp) 
+				return ipaddr.to_string();
+        }
+        it++;
+    }
+
+	return subnet;
+}
 
 }
 

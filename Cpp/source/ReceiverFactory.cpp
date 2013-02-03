@@ -22,9 +22,11 @@ namespace ops
             return receiver;
         }
 
+		std::string localIf = Domain::doSubnetTranslation(mcDomain->getLocalInterface(), participant->getIOService());
+
         if (top.getTransport() == Topic::TRANSPORT_MC)
         {
-            receiver = Receiver::create(top.getDomainAddress(), top.getPort(), ioService, mcDomain->getLocalInterface(), top.getInSocketBufferSize());
+            receiver = Receiver::create(top.getDomainAddress(), top.getPort(), ioService, localIf, top.getInSocketBufferSize());
         }
         else if (top.getTransport() == Topic::TRANSPORT_TCP)
         {
@@ -32,7 +34,7 @@ namespace ops
         }
         else if (top.getTransport() == Topic::TRANSPORT_UDP)
         {
-            receiver = Receiver::createUDPReceiver(0, ioService, mcDomain->getLocalInterface(), top.getInSocketBufferSize());
+            receiver = Receiver::createUDPReceiver(0, ioService, localIf, top.getInSocketBufferSize());
         }
         return receiver;
     }

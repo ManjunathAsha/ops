@@ -22,6 +22,7 @@
 
 #include <string>
 #include <vector>
+#include "IOService.h"
 #include "Topic.h"
 #include "OPSObject.h"
 
@@ -56,6 +57,7 @@ namespace ops
 		
 		virtual ~Domain();
 
+		static std::string doSubnetTranslation(std::string addr, IOService* ioServ);
 		
 	};
 
