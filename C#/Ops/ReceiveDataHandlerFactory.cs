@@ -56,16 +56,19 @@ namespace Ops
                 return rdh;
             }
 
+            // Get the local interface, doing a translation from subnet if necessary
+            string localIF = Domain.DoSubnetTranslation(participant.getDomain().GetLocalInterface());
+
             // Didn't exist, create one if transport is known
             if ( (top.GetTransport().Equals(Topic.TRANSPORT_MC)) || (top.GetTransport().Equals(Topic.TRANSPORT_TCP)) )
             {
                 ReceiveDataHandlers.Add(key, 
-                    new ReceiveDataHandler(top, participant, ReceiverFactory.CreateReceiver(top, participant.getDomain().GetLocalInterface())));
+                    new ReceiveDataHandler(top, participant, ReceiverFactory.CreateReceiver(top, localIF)));
                 return ReceiveDataHandlers[key];
             }
             else if (top.GetTransport().Equals(Topic.TRANSPORT_UDP))
             {
-                IReceiver rec = ReceiverFactory.CreateReceiver(top, participant.getDomain().GetLocalInterface());
+                IReceiver rec = ReceiverFactory.CreateReceiver(top, localIF);
                 ReceiveDataHandlers.Add(key, new ReceiveDataHandler(top, participant, rec));
 
                 participant.SetUdpTransportInfo(((UdpReceiver)rec).IP, ((UdpReceiver)rec).Port);

@@ -142,6 +142,37 @@ namespace Ops
             this.localInterface = localInterface;
         }
 
+        // If argument contains a "/" we assume it is on the form:  subnet-address/subnet-mask
+        // In that case we loop over all interfaces and take the first one that matches
+        // i.e. the one whos interface address is on the subnet
+        public static string DoSubnetTranslation(string ip)
+        {
+            int index = ip.IndexOf('/');
+            if (index < 0) return ip;
+
+            string subnetIp = ip.Substring(0, index);
+            string subnetMask = ip.Substring(index + 1);
+
+            System.Net.NetworkInformation.IPGlobalProperties gp = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties();
+            System.Net.NetworkInformation.UnicastIPAddressInformationCollection x = gp.GetUnicastAddresses();
+            for (int i = 0; i < x.Count; i++)
+            {
+                if (x[i].Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) //IPV4
+                {
+                    byte[] addr = x[i].Address.GetAddressBytes();
+                    byte[] mask = x[i].IPv4Mask.GetAddressBytes();
+                    for (int j = 0; j < addr.Length; j++) addr[j] = (byte)((int)addr[j] & (int)mask[j]);
+                    string Subnet = new System.Net.IPAddress(addr).ToString();
+
+                    if (Subnet.Equals(subnetIp))
+                    {
+                        return x[i].Address.ToString();
+                    }
+                }
+            }
+            return subnetIp;
+        }
+
 	}
 
 }

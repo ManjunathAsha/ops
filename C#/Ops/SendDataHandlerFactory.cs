@@ -33,14 +33,17 @@ namespace Ops
 
             try
             {
+                // Get the local interface, doing a translation from subnet if necessary
+                string localIF = Domain.DoSubnetTranslation(participant.getDomain().GetLocalInterface());
+
                 ISendDataHandler sender = null;
                 if (t.GetTransport().Equals(Topic.TRANSPORT_MC))
                 {
-                    sender = new McSendDataHandler(t, participant.getDomain().GetLocalInterface());
+                    sender = new McSendDataHandler(t, localIF);
                 }
                 else if (t.GetTransport().Equals(Topic.TRANSPORT_TCP))
                 {
-                    sender = new TcpSendDataHandler(t, participant.getDomain().GetLocalInterface());
+                    sender = new TcpSendDataHandler(t, localIF);
                 }
                 if (sender != null)
                 {
@@ -55,8 +58,8 @@ namespace Ops
                     {
                         // We have only one sender for all topics, so use the domain value for buffer size
                         udpSendDataHandler = new McUdpSendDataHandler(
-                            participant.getDomain().GetOutSocketBufferSize(), 
-                            participant.getDomain().GetLocalInterface());
+                            participant.getDomain().GetOutSocketBufferSize(),
+                            localIF);
                                                                       
                         // Setup a listener on the participant info data published by participants on our domain.
                         // We use the information for topics with UDP as transport, to know the destination for UDP sends
