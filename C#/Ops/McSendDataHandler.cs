@@ -16,7 +16,7 @@ namespace Ops
 
         public McSendDataHandler(Topic t, string localInterface) 
         {
-            sender = new MulticastSender(0, localInterface, 0, t.GetOutSocketBufferSize());     // Make ttl configurable
+            sender = new MulticastSender(0, localInterface, 1, t.GetOutSocketBufferSize());     // Make ttl configurable
             sinkIP = InetAddress.GetByName(t.GetDomainAddress());
         }
 
