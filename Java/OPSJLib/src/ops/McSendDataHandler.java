@@ -21,7 +21,7 @@ public class McSendDataHandler extends SendDataHandlerBase
 
     public McSendDataHandler(Topic t, String localInterface) throws IOException
     {
-        sender = new MulticastSender(0, localInterface, 0, t.getOutSocketBufferSize());
+        sender = new MulticastSender(0, localInterface, 1, t.getOutSocketBufferSize());
         sinkIP = InetAddress.getByName(t.getDomainAddress());
     }
 
