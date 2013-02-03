@@ -65,14 +65,16 @@ class ReceiveDataHandlerFactory
             return rdh;
         }
 
+        String localIf = Domain.DoSubnetTranslation(participant.getDomain().getLocalInterface());
+
         if(top.getTransport().equals(Topic.TRANSPORT_MC) || top.getTransport().equals(Topic.TRANSPORT_TCP))
         {
-            receiveDataHandlers.put(key, new ReceiveDataHandler(top, participant, ReceiverFactory.createReceiver(top, participant.getDomain().getLocalInterface())));
+            receiveDataHandlers.put(key, new ReceiveDataHandler(top, participant, ReceiverFactory.createReceiver(top, localIf)));
             return receiveDataHandlers.get(key);
         }
         else if (top.getTransport().equals(Topic.TRANSPORT_UDP))
         {
-            Receiver rec = ReceiverFactory.createReceiver(top, participant.getDomain().getLocalInterface());
+            Receiver rec = ReceiverFactory.createReceiver(top, localIf);
             receiveDataHandlers.put(key, new ReceiveDataHandler(top, participant, rec));
 
             participant.setUdpTransportInfo(((UDPReceiver)rec).getIP(), ((UDPReceiver)rec).getPort());

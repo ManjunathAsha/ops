@@ -22,6 +22,10 @@ package ops;
 
 import configlib.ArchiverInOut;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
 import java.util.Vector;
 
 /**
@@ -150,6 +154,51 @@ public class Domain extends OPSObject
 
     public void setLocalInterface(String localInterface) {
         this.localInterface = localInterface;
+    }
+
+    // If argument contains a "/" we assume it is on the form:  subnet-address/subnet-mask
+    // In that case we loop over all interfaces and take the first one that matches
+    // i.e. the one whos interface address is on the subnet
+    public static String DoSubnetTranslation(String ip)
+    {
+        int index = ip.indexOf('/');
+        if (index < 0) return ip;
+
+        String subnetIp = ip.substring(0, index);
+        String subnetMask = ip.substring(index + 1);
+
+        try
+        {
+            InetAddress ipAddress = InetAddress.getByName(subnetMask);
+            byte[] mask = ipAddress.getAddress();
+
+            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+            for (NetworkInterface netint : java.util.Collections.list(nets))
+            {
+                java.util.List<java.net.InterfaceAddress> ifAddresses = netint.getInterfaceAddresses();
+                for (java.net.InterfaceAddress ifAddress : ifAddresses) {
+                    if (ifAddress.getAddress() instanceof Inet4Address) {
+                        byte[] addr = ifAddress.getAddress().getAddress();
+                        for (int j = 0; j < addr.length; j++) addr[j] = (byte)((int)addr[j] & (int)mask[j]);
+
+                        String Subnet = InetAddress.getByAddress(addr).toString();
+                        index = Subnet.indexOf('/');
+                        if (index >= 0) Subnet = Subnet.substring(index+1);
+
+                        if (Subnet.equals(subnetIp))
+                        {
+                            // split "hostname/127.0.0.1/8 [0.255.255.255]"
+                            String s[] = ifAddress.toString().split("/");
+                            return s[1];
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+        }
+        return subnetIp;
     }
 
 }

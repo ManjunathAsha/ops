@@ -35,13 +35,15 @@ class SendDataHandlerFactory
         SendDataHandler sender = null;
         try
         {
+            String localIf = Domain.DoSubnetTranslation(participant.getDomain().getLocalInterface());
+
             if(t.getTransport().equals(Topic.TRANSPORT_MC))
             {
-                sender = new McSendDataHandler(t, participant.getDomain().getLocalInterface());
+                sender = new McSendDataHandler(t, localIf);
             }
             if(t.getTransport().equals(Topic.TRANSPORT_TCP))
             {
-                sender = new TcpSendDataHandler(t, participant.getDomain().getLocalInterface());
+                sender = new TcpSendDataHandler(t, localIf);
             }
             if (sender != null)
             {
@@ -57,7 +59,7 @@ class SendDataHandlerFactory
                     // We have only one sender for all topics, so use the domain value for buffer size
                     udpSendDataHandler = new McUdpSendDataHandler(
                         participant.getDomain().GetOutSocketBufferSize(),
-                        participant.getDomain().getLocalInterface());
+                        localIf);
 
                     // Setup a listener on the participant info data published by participants on our domain.
                     // We use the information for topics with UDP as transport, to know the destination for UDP sends
