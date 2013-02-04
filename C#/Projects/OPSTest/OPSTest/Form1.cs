@@ -437,6 +437,46 @@ namespace OPSTest
             Log("[Topic: " + sender.GetTopic().GetName() + "] IP: " + data.ip);
         }
 
+        private void test(string IP)
+        {
+            Log("Test: Domain.DoSubnetTranslation(" + IP + ") = " + Domain.DoSubnetTranslation(IP));
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            System.Net.NetworkInformation.IPGlobalProperties gp = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties();
+            System.Net.NetworkInformation.UnicastIPAddressInformationCollection x = gp.GetUnicastAddresses();
+            for (int i = 0; i < x.Count; i++)
+            {
+                if (x[i].Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) //IPV4
+                {
+                    byte[] addr = x[i].Address.GetAddressBytes(); 
+                    byte[] mask = x[i].IPv4Mask.GetAddressBytes();
+                    for (int j = 0; j < addr.Count(); j++) addr[j] = (byte)((int)addr[j] & (int)mask[j]);
+
+                    System.Net.IPAddress Subnet = new System.Net.IPAddress(addr);
+
+                    Log("IPV4 Address: " + x[i].Address.ToString() +
+                        ", Mask: " + x[i].IPv4Mask.ToString() +
+                        ", Subnet: " + Subnet.ToString()
+                        );
+                }
+                else if (x[i].Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6) //IPV6
+                {
+                    //Log("IPV6 Address: " + x[i].Address.ToString());
+                }
+                else
+                {
+                    //Log("OTHER Address: " + x[i].Address.ToString());
+                }
+            }
+
+            test("0.0.0.0");
+            test("127.0.0.1");
+            test("192.168.0.0/255.255.255.0");
+            test("192.168.0.34");
+        }
+
     }
 
     /// ==============================================================================
