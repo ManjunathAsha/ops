@@ -39,6 +39,8 @@ public class OpsTestApp extends SingleFrameApplication {
      * Main method launching the application.
      */
     public static void main(String[] args) {
+/// Needed on Windows 7, to get correct netmas for IP4
+///        System.setProperty("java.net.preferIPv4Stack","true");  ///TEST
         launch(OpsTestApp.class, args);
     }
 }

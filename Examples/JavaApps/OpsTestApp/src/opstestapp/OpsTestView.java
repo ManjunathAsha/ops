@@ -38,6 +38,9 @@ import PizzaProject.PizzaProjectTypeFactory;
 
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.net.Inet4Address;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
 import ops.ConfigurationException;
 import ops.Listener;
 import ops.OPSObject;
@@ -695,6 +698,31 @@ public class OpsTestView extends FrameView implements IOpsHelperListener, Listen
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
+        try
+        {
+            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+            for (NetworkInterface netint : java.util.Collections.list(nets))
+            {
+                java.util.List<java.net.InterfaceAddress> ifAddresses = netint.getInterfaceAddresses();
+                for (java.net.InterfaceAddress ifAddress : ifAddresses) {
+                    if (ifAddress.getAddress() instanceof Inet4Address) {
+                        // split "hostname/127.0.0.1/8 [0.255.255.255]"
+                        // String s[] = ifAddress.toString().split("/");
+                        Log("IP: " + ifAddress.getAddress() + ", Broadcast: " + ifAddress.getBroadcast());
+                        Log(", PrefixLength: " + ifAddress.getNetworkPrefixLength() + "\n");
+
+                    }
+                }
+            }
+
+            Log("127.0.0.1 --> " + Domain.DoSubnetTranslation("127.0.0.1") + "\n");
+            Log("192.168.0.0/255.255.255.0 --> " + Domain.DoSubnetTranslation("192.168.0.0/255.255.255.0") + "\n");
+            Log("192.168.0.34 --> " + Domain.DoSubnetTranslation("192.168.0.34") + "\n");
+
+        }
+        catch (Exception e)
+        {
+        }
 
     }//GEN-LAST:event_jButton1ActionPerformed
 
