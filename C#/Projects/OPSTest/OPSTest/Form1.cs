@@ -444,40 +444,177 @@ namespace OPSTest
 
         private void button1_Click(object sender, EventArgs e)
         {
-            System.Net.NetworkInformation.IPGlobalProperties gp = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties();
-            System.Net.NetworkInformation.UnicastIPAddressInformationCollection x = gp.GetUnicastAddresses();
-            for (int i = 0; i < x.Count; i++)
-            {
-                if (x[i].Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) //IPV4
-                {
-                    byte[] addr = x[i].Address.GetAddressBytes(); 
-                    byte[] mask = x[i].IPv4Mask.GetAddressBytes();
-                    for (int j = 0; j < addr.Count(); j++) addr[j] = (byte)((int)addr[j] & (int)mask[j]);
+            //System.Net.NetworkInformation.IPGlobalProperties gp = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties();
+            //System.Net.NetworkInformation.UnicastIPAddressInformationCollection x = gp.GetUnicastAddresses();
+            //for (int i = 0; i < x.Count; i++)
+            //{
+            //    if (x[i].Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) //IPV4
+            //    {
+            //        byte[] addr = x[i].Address.GetAddressBytes(); 
+            //        byte[] mask = x[i].IPv4Mask.GetAddressBytes();
+            //        for (int j = 0; j < addr.Count(); j++) addr[j] = (byte)((int)addr[j] & (int)mask[j]);
 
-                    System.Net.IPAddress Subnet = new System.Net.IPAddress(addr);
+            //        System.Net.IPAddress Subnet = new System.Net.IPAddress(addr);
 
-                    Log("IPV4 Address: " + x[i].Address.ToString() +
-                        ", Mask: " + x[i].IPv4Mask.ToString() +
-                        ", Subnet: " + Subnet.ToString()
-                        );
-                }
-                else if (x[i].Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6) //IPV6
-                {
-                    //Log("IPV6 Address: " + x[i].Address.ToString());
-                }
-                else
-                {
-                    //Log("OTHER Address: " + x[i].Address.ToString());
-                }
-            }
+            //        Log("IPV4 Address: " + x[i].Address.ToString() +
+            //            ", Mask: " + x[i].IPv4Mask.ToString() +
+            //            ", Subnet: " + Subnet.ToString()
+            //            );
+            //    }
+            //    else if (x[i].Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6) //IPV6
+            //    {
+            //        //Log("IPV6 Address: " + x[i].Address.ToString());
+            //    }
+            //    else
+            //    {
+            //        //Log("OTHER Address: " + x[i].Address.ToString());
+            //    }
+            //}
 
             test("0.0.0.0");
             test("127.0.0.1");
             test("192.168.0.0/255.255.255.0");
             test("192.168.0.34");
+
+
+            System.Net.NetworkInformation.IPGlobalProperties computerProperties = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties();
+            System.Net.NetworkInformation.NetworkInterface[] nics = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+
+            Log("Interface information for " + computerProperties.HostName + " . " + computerProperties.DomainName);
+            if (nics == null || nics.Length < 1)
+            {
+                Log("  No network interfaces found.");
+                return;
+            }
+  
+            Log("  Number of interfaces .................... : " + nics.Length);
+            foreach (System.Net.NetworkInformation.NetworkInterface adapter in nics)
+            {
+                System.Net.NetworkInformation.IPInterfaceProperties properties = adapter.GetIPProperties();
+                Log(adapter.Description);
+                Log(String.Empty.PadLeft(adapter.Description.Length, '='));
+                Log("  Interface type .......................... : " + adapter.NetworkInterfaceType);
+                //Log("  Physical Address ........................ : " + adapter.GetPhysicalAddress().ToString());
+                //Log("  Operational status ...................... : " + adapter.OperationalStatus);
+
+                //string versions = "";
+
+                // Create a display string for the supported IP versions.
+
+                //if (adapter.Supports(System.Net.NetworkInformation.NetworkInterfaceComponent.IPv4))
+                //{
+                //    versions = "IPv4";
+                //}
+                //if (adapter.Supports(System.Net.NetworkInformation.NetworkInterfaceComponent.IPv6))
+                //{
+                //    if (versions.Length > 0)
+                //    {
+                //        versions += " ";
+                //    }
+                //    versions += "IPv6";
+                //}
+                //Log("  IP version .............................. : " + versions);
+
+                ShowIPAddresses(properties);
+
+                // The following information is not useful for loopback adapters.
+
+                //if (adapter.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Loopback)
+                //{
+                //    continue;
+                //}
+                //Log("  DNS suffix .............................. : " + properties.DnsSuffix);
+
+                //if (adapter.Supports(System.Net.NetworkInformation.NetworkInterfaceComponent.IPv4))
+                //{
+                //    System.Net.NetworkInformation.IPv4InterfaceProperties ipv4 = properties.GetIPv4Properties();
+                //    Log("  MTU...................................... : " + ipv4.Mtu);
+                //}
+
+            }
         }
 
+        public void ShowIPAddresses(System.Net.NetworkInformation.IPInterfaceProperties adapterProperties)
+        {
+            //System.Net.NetworkInformation.IPAddressCollection dnsServers = adapterProperties.DnsAddresses;
+            //if (dnsServers != null)
+            //{
+            //    foreach (System.Net.IPAddress dns in dnsServers)
+            //    {
+            //        Log("  DNS Servers ............................. : " + dns.ToString()
+            //       );
+            //    }
+            //}
+
+            //System.Net.NetworkInformation.IPAddressInformationCollection anyCast = adapterProperties.AnycastAddresses;
+            //if (anyCast != null)
+            //{
+            //    foreach (System.Net.NetworkInformation.IPAddressInformation any in anyCast)
+            //    {
+            //        if (any.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) //IPV4
+            //            Log("  Anycast Address .......................... : " + any.Address + " " + (any.IsTransient ? "Transient" : "") + " " + (any.IsDnsEligible ? "DNS Eligible" : ""));
+            //    }
+            //    Console.WriteLine();
+            //}
+
+            //System.Net.NetworkInformation.MulticastIPAddressInformationCollection multiCast = adapterProperties.MulticastAddresses;
+            //if (multiCast != null)
+            //{
+            //    foreach (System.Net.NetworkInformation.IPAddressInformation multi in multiCast)
+            //    {
+            //        if (multi.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) //IPV4
+            //            Log("  Multicast Address ....................... : " +
+            //                multi.Address + " " +
+            //                (multi.IsTransient ? "Transient" : "") + " " +
+            //                (multi.IsDnsEligible ? "DNS Eligible" : "")
+            //            );
+            //    }
+            //    Console.WriteLine();
+            //}
+
+            System.Net.NetworkInformation.UnicastIPAddressInformationCollection uniCast = adapterProperties.UnicastAddresses;
+            if (uniCast != null)
+            {
+                //string lifeTimeFormat = "dddd, MMMM dd, yyyy  hh:mm:ss tt";
+                foreach (System.Net.NetworkInformation.UnicastIPAddressInformation uni in uniCast)
+                {
+                    //DateTime when;
+
+                    if (uni.Address.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork) continue; //IPV4
+                    
+                    Log("  Unicast Address ......................... : " + uni.Address);
+                    //Log("     Prefix Origin ........................ : " + uni.PrefixOrigin);
+                    //Log("     Suffix Origin ........................ : " + uni.SuffixOrigin);
+                    //Log("     Duplicate Address Detection .......... : " + uni.DuplicateAddressDetectionState);
+
+                    // Format the lifetimes as Sunday, February 16, 2003 11:33:44 PM
+
+                    // if en-us is the current culture.
+
+
+                    //// Calculate the date and time at the end of the lifetimes.    
+
+                    //when = DateTime.UtcNow + TimeSpan.FromSeconds(uni.AddressValidLifetime);
+                    //when = when.ToLocalTime();
+                    //Console.WriteLine("     Valid Life Time ...................... : {0}",
+                    //    when.ToString(lifeTimeFormat, System.Globalization.CultureInfo.CurrentCulture)
+                    //);
+                    //when = DateTime.UtcNow + TimeSpan.FromSeconds(uni.AddressPreferredLifetime);
+                    //when = when.ToLocalTime();
+                    //Console.WriteLine("     Preferred life time .................. : {0}",
+                    //    when.ToString(lifeTimeFormat, System.Globalization.CultureInfo.CurrentCulture)
+                    //);
+
+                    //when = DateTime.UtcNow + TimeSpan.FromSeconds(uni.DhcpLeaseLifetime);
+                    //when = when.ToLocalTime();
+                    //Console.WriteLine("     DHCP Leased Life Time ................ : {0}",
+                    //    when.ToString(lifeTimeFormat, System.Globalization.CultureInfo.CurrentCulture)
+                    //);
+                }
+            }
+        }
     }
+
 
     /// ==============================================================================
     /// ==============================================================================

@@ -153,24 +153,56 @@ namespace Ops
             string subnetIp = ip.Substring(0, index);
             string subnetMask = ip.Substring(index + 1);
 
-            System.Net.NetworkInformation.IPGlobalProperties gp = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties();
-            System.Net.NetworkInformation.UnicastIPAddressInformationCollection x = gp.GetUnicastAddresses();
-            for (int i = 0; i < x.Count; i++)
-            {
-                if (x[i].Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) //IPV4
-                {
-                    byte[] addr = x[i].Address.GetAddressBytes();
-                    byte[] mask = x[i].IPv4Mask.GetAddressBytes();
-                    for (int j = 0; j < addr.Length; j++) addr[j] = (byte)((int)addr[j] & (int)mask[j]);
-                    string Subnet = new System.Net.IPAddress(addr).ToString();
+            byte[] mask = System.Net.IPAddress.Parse(subnetMask).GetAddressBytes();
 
-                    if (Subnet.Equals(subnetIp))
+            System.Net.NetworkInformation.IPGlobalProperties computerProperties = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties();
+            System.Net.NetworkInformation.NetworkInterface[] nics = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+
+            if (nics != null && nics.Length > 0)
+            {
+                foreach (System.Net.NetworkInformation.NetworkInterface adapter in nics)
+                {
+                    System.Net.NetworkInformation.IPInterfaceProperties properties = adapter.GetIPProperties();
+                    System.Net.NetworkInformation.UnicastIPAddressInformationCollection uniCast = properties.UnicastAddresses;
+                    if (uniCast == null) continue;
+
+                    foreach (System.Net.NetworkInformation.UnicastIPAddressInformation uni in uniCast)
                     {
-                        return x[i].Address.ToString();
+                        if (uni.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) //IPV4
+                        {
+                            byte[] addr = uni.Address.GetAddressBytes();
+                            for (int j = 0; j < addr.Length; j++) addr[j] = (byte)((int)addr[j] & (int)mask[j]);
+                            string Subnet = new System.Net.IPAddress(addr).ToString();
+
+                            if (Subnet.Equals(subnetIp))
+                            {
+                                return uni.Address.ToString();
+                            }
+                        }
                     }
                 }
             }
             return subnetIp;
+
+            //// This only works on Vista and later
+            //System.Net.NetworkInformation.IPGlobalProperties gp = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties();
+            //System.Net.NetworkInformation.UnicastIPAddressInformationCollection x = gp.GetUnicastAddresses();
+            //for (int i = 0; i < x.Count; i++)
+            //{
+            //    if (x[i].Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) //IPV4
+            //    {
+            //        byte[] addr = x[i].Address.GetAddressBytes();
+            //        byte[] mask = x[i].IPv4Mask.GetAddressBytes();
+            //        for (int j = 0; j < addr.Length; j++) addr[j] = (byte)((int)addr[j] & (int)mask[j]);
+            //        string Subnet = new System.Net.IPAddress(addr).ToString();
+
+            //        if (Subnet.Equals(subnetIp))
+            //        {
+            //            return x[i].Address.ToString();
+            //        }
+            //    }
+            //}
+            //return subnetIp;
         }
 
 	}
