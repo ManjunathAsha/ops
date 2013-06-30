@@ -1,12 +1,16 @@
 // PizzaTest.cpp : Defines the entry point for the console application.
 //
 
+#ifdef _WIN32
 #include "stdafx.h"
-
 #include <windows.h>
-#include <stdio.h>
 #include <conio.h>
-#include <strstream>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sstream>
+#include <process.h>
 
 #include <ops.h>
 #include "pizza/PizzaData.h"
@@ -18,9 +22,52 @@
 
 #include "PizzaProject/PizzaProjectTypeFactory.h"
 
+#ifdef _WIN32
 #include "SdsSystemTime.h"
+#endif
 
 #undef USE_MESSAGE_HEADER
+
+#ifndef _WIN32
+#include <time.h>
+
+__int64 getNow()
+{
+    struct timespec ts;
+    memset(&ts, 0, sizeof(ts));
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return ((1000 * ts.tv_sec) + (ts.tv_nsec / 1000000));
+}
+
+#include <stdio.h>
+#include <sys/select.h>
+#include <sys/ioctl.h> 
+#include <termios.h>
+
+int _kbhit() {
+    static const int STDIN = 0;
+    static bool initialized = false;
+
+    if (! initialized) {
+        // Use termios to turn off line buffering
+        termios term;
+        tcgetattr(STDIN, &term);
+        term.c_lflag &= ~ICANON;
+        tcsetattr(STDIN, TCSANOW, &term);
+        setbuf(stdin, NULL);
+        initialized = true;
+    }
+
+    int bytesWaiting;
+    ioctl(STDIN, FIONREAD, &bytesWaiting);
+    return bytesWaiting;
+}
+#else
+__int64 getNow()
+{
+    return (__int64)timeGetTime();
+}
+#endif
 
 template <class DataType>
 class CHelperListener
@@ -90,7 +137,14 @@ public:
 
 				//Create a publisher on that topic
 				pub = new DataTypePublisher(topic);
-				pub->setName("C++Test Program");
+
+				std::ostringstream myStream;
+#ifdef _WIN32
+				myStream << " Win(" << _getpid() << ")" << std::ends;
+#else
+				myStream << " Linux(" << getpid() << ")" << std::ends;
+#endif
+				pub->setName("C++Test " + myStream.str());
 			}
 			catch (...) {
 				std::cout << "Requested topic '" << topicName << "' does not exist!!" << std::endl;
@@ -286,12 +340,12 @@ __int64 sendPeriod = 1000;
 
 void WriteToAllSelected()
 {
-	static unsigned __int64 Counter = 0;
+	static __int64 Counter = 0;
 
 	for (unsigned int i = 0; i < ItemInfoList.size(); i++) {
 		ItemInfo* info = ItemInfoList[i];
 		if (!info->selected) continue;
-		std::strstream str;
+		std::stringstream str;
 		str << Counter << std::ends;
 		std::string CounterStr(str.str());
 		Counter++;
@@ -318,13 +372,14 @@ void menu()
 {
 	std::cout << "" << std::endl;
 	for (unsigned int i = 0; i < ItemInfoList.size(); i++) {
+            ItemInfo* ii = ItemInfoList[i];
 		std::cout << "\t " << i << 
 			" " << 
-			(ItemInfoList[i]->helper->HasPublisher() ? "P" : " ") << 
-			(ItemInfoList[i]->helper->HasSubscriber() ? "S" : " ") << 
-			(ItemInfoList[i]->selected ? "*" : " ") << 
+		(ii->helper->HasPublisher() ? "P" : " ") << 
+		(ii->helper->HasSubscriber() ? "S" : " ") << 
+		(ii->selected ? "*" : " ") << 
 			" " <<
-			ItemInfoList[i]->Domain << "::" << ItemInfoList[i]->TopicName << std::endl;
+		ii->Domain << "::" << ii->TopicName << std::endl;
 	}
 
 	std::cout << "" << std::endl;
@@ -346,6 +401,7 @@ void menu()
 
 int main(int argc, char**argv)
 {
+#ifdef _WIN32
 	// --------------------------------------------------------------------
 	// Try to set timer resolution to 1 ms 
 	#define TARGET_RESOLUTION 1         // 1-millisecond target resolution
@@ -359,6 +415,7 @@ int main(int argc, char**argv)
 	timeBeginPeriod(wTimerRes); 
 
 	sds::sdsSystemTimeInit();
+#endif
 
 	// --------------------------------------------------------------------
 	MyListener myListener;
@@ -385,6 +442,10 @@ int main(int argc, char**argv)
 	// Create participants
 	// NOTE that the second parameter (participantID) must be different for the two participant instances
 	ops::Participant* participant = ops::Participant::getInstance("PizzaDomain", "PizzaDomain");
+        if (participant == NULL) {
+            std::cout << "Failed to create Participant. Missing ops_config.xml ??" << std::endl;
+            exit(-1);
+        }
 	participant->addTypeSupport(new PizzaProject::PizzaProjectTypeFactory());
 	
 	ops::Participant* otherParticipant = ops::Participant::getInstance("OtherPizzaDomain", "OtherPizzaDomain");
@@ -418,14 +479,15 @@ int main(int argc, char**argv)
 		}
 	}
 
-	ItemInfoList[0]->selected = true;
+	ItemInfo* ii = ItemInfoList[0]; 
+        ii->selected = true;
 
 	bool doExit = false;
 	bool doPeriodicSend = false;
 
 	menu();
 
-	__int64 nextSendTime = (__int64)timeGetTime() + sendPeriod;
+	__int64 nextSendTime = (__int64)getNow() + sendPeriod;
 
 	while (!doExit) {
 		std::cout << std::endl << " (? = menu) > ";
@@ -433,14 +495,18 @@ int main(int argc, char**argv)
 		// Repeated sends
 		if (doPeriodicSend) {
 			while (!_kbhit()) {
-				__int64 now = (__int64)timeGetTime();
+				__int64 now = (__int64)getNow();
 				if (now >= nextSendTime) {
 					// write
 					WriteToAllSelected();
 					// Calc next time to send
 					nextSendTime = now + sendPeriod;
 				}
+#ifdef _WIN32
 				Sleep(1);			
+#else
+                                usleep(1000);
+#endif
 			}
 		}
 
@@ -449,7 +515,7 @@ int main(int argc, char**argv)
 		TFunction func = NONE;
 
 		char buffer[1024];
-		char* ptr = gets_s(buffer, sizeof(buffer));
+		char* ptr = fgets(buffer, sizeof(buffer), stdin);
 		std::string line(buffer);
 
 		// trim start
@@ -496,13 +562,15 @@ int main(int argc, char**argv)
 			if (idx > 0) line.erase(0, idx);
 		}
 
+                ItemInfo* ii = ItemInfoList[num];
+                
 		switch (ch) {
 			case '?':
 				menu();
 				break;
 
 			case '0':
-				ItemInfoList[num]->selected = !ItemInfoList[num]->selected;
+				ii->selected = !ii->selected;
 				break;
 
 			case 'a':
@@ -604,9 +672,10 @@ int main(int argc, char**argv)
 	// --------------------------------------------------------------------
 
 	for (unsigned int idx = 0; idx < ItemInfoList.size(); idx++) {
-		if (ItemInfoList[idx]->helper) delete ItemInfoList[idx]->helper;
-		ItemInfoList[idx]->helper = NULL;
-		ItemInfoList[idx]->part = NULL;
+                ItemInfo* ii = ItemInfoList[idx];
+		if (ii->helper) delete ii->helper;
+		ii->helper = NULL;
+		ii->part = NULL;
 		delete ItemInfoList[idx]; 
 		ItemInfoList[idx] = NULL;
 	}
@@ -620,11 +689,12 @@ int main(int argc, char**argv)
 ///TODO this should be done by asking Participant to delete instances??
 	delete participant;
 
-
-
+#ifdef _WIN32
 	// --------------------------------------------------------------------
 	// We don't need the set resolution any more
 	timeEndPeriod(wTimerRes); 
+#endif
+        
 }
 
 
