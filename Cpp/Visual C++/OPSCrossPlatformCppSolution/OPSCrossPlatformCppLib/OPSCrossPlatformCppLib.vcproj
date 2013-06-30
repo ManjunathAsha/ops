@@ -306,6 +306,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\source\Compatibility.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\source\DataNotifier.cpp"
 				>
 			</File>
@@ -521,6 +525,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\CommException.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\Compatibility.h"
 				>
 			</File>
 			<File

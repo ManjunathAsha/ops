@@ -33,7 +33,6 @@
 #include "DeadlineTimer.h"
 #include "Error.h"
 #include "ErrorService.h"
-#include "Publisher.h"
 #include "ParticipantInfoData.h"
 #include "ParticipantInfoDataListener.h"
 #include "SendDataHandler.h"
@@ -47,6 +46,7 @@ namespace ops
 	class ReceiveDataHandlerFactory;
 	class SendDataHandlerFactory;
 	class Domain;
+    class Publisher;
 
 	class Participant : Runnable, Listener<int>
 	{
@@ -77,7 +77,7 @@ namespace ops
 
 		void run();
 
-		//Make this participant report an Error, which will be delivered to all ErrorSErvice listeners
+		//Make this participant report an Error, which will be delivered to all ErrorService listeners
 		void reportError(Error* err);
 
 		///Deadline listener callback
@@ -124,13 +124,13 @@ namespace ops
 
 	private:
 
-		///Constructor is private instance are aquired through getInstance()
+		///Constructor is private instance are acquired through getInstance()
 		Participant(std::string domainID_, std::string participantID_, std::string configFile_);
 
 		///Remove this instance from the static instance map
 		void RemoveInstance();
 
-		///The IOService used for this participant, it handles kommunikation and timers for all receivers, subsribers and meber timers of this Participant.
+		///The IOService used for this participant, it handles communication and timers for all receivers, subscribers and member timers of this Participant.
 		IOService* ioService;
 		OPSConfig* config;
 
@@ -140,11 +140,12 @@ namespace ops
 		///The threadPool drives ioService. By default Participant use a SingleThreadPool i.e. only one thread drives ioService.
 		ThreadPool* threadPool;
 
-		///A timer that fires with a certain periocity, it keeps this Partivipant alive in the system by publishing ParticipantInfoData
+		///A timer that fires with a certain periodicity, it keeps this Participant alive in the system by publishing ParticipantInfoData
 		DeadlineTimer* aliveDeadlineTimer;
 
 		///A publisher of ParticipantInfoData
 		Publisher* partInfoPub;
+                
 		///The ParticipantInfoData that partInfoPub will publish periodically
 		ParticipantInfoData partInfoData;
 		Lockable partInfoDataMutex;
@@ -188,7 +189,6 @@ namespace ops
 
 		///Static Mutex used by factory methods getInstance()
 		static Lockable creationMutex;
-
 
 	};
 

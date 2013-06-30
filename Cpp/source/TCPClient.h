@@ -33,6 +33,7 @@
 #include "boost/bind.hpp"
 #include "Participant.h"
 #include "BasicError.h"
+#include "Compatibility.h"
 
 namespace ops
 {
@@ -43,7 +44,8 @@ namespace ops
 
         TCPClient(std::string serverIP, int serverPort, IOService* ioServ, __int64 inSocketBufferSizent = 16000000) : 
 			connected(false), tryToConnect(false), accumulatedSize(0),
-			m_connectCounter(0), m_receiveCounter(0)
+			endpoint(NULL), sock(NULL),
+			m_asyncCallActive(false), m_working(false)
         {
             boost::asio::io_service* ioService = ((BoostIOServiceImpl*) ioServ)->boostIOService; //((BoostIOServiceImpl*)Participant::getIOService())->boostIOService;
             boost::asio::ip::address ipAddr(boost::asio::ip::address_v4::from_string(serverIP));
@@ -57,7 +59,9 @@ namespace ops
 		{
 			tryToConnect = true;
             connected = false;
-			InterlockedIncrement(&m_connectCounter);	// keep track of outstanding requests
+			// Set variables indicating that we are "active"
+			m_working = true;
+			m_asyncCallActive = true;
             sock->async_connect(*endpoint, boost::bind(&TCPClient::handleConnect, this, boost::asio::placeholders::error));
 		}
 
@@ -66,19 +70,21 @@ namespace ops
 			//Close the socket 
 			tryToConnect = false;
             connected = false;
-            sock->close();
+            if (sock) sock->close();
 		}
 
         void handleConnect(const boost::system::error_code& error)
         {
+			m_asyncCallActive = false;
 			if (tryToConnect) {
 				if (error)
 				{
 					//connect again
 					connected = false;
 					//std::cout << "connection failed tcp asynch" << std::endl;
-///LA too much output        Participant::reportStaticError(&ops::BasicError("TCPClient", "handleConnect", "connection failed tcp asynch"));
-					InterlockedIncrement(&m_connectCounter);	// keep track of outstanding requests
+///					ops::BasicError err("TCPClient", "handleConnect", "connection failed tcp asynch");
+///LA too much output        Participant::reportStaticError(&err);
+					m_asyncCallActive = true;
 					sock->async_connect(*endpoint, boost::bind(&TCPClient::handleConnect, this, boost::asio::placeholders::error));
 				}
 				else
@@ -88,14 +94,15 @@ namespace ops
 
 					if(inSocketBufferSizent > 0)
 					{
-						boost::asio::socket_base::receive_buffer_size option(inSocketBufferSizent);
+						boost::asio::socket_base::receive_buffer_size option((int)inSocketBufferSizent);
 						boost::system::error_code ec;
 						ec = sock->set_option(option, ec);
 						sock->get_option(option);
 						if (ec != 0 || option.value() != inSocketBufferSizent)
 						{
 							//std::cout << "Socket buffer size could not be set" << std::endl;
-							Participant::reportStaticError(&ops::BasicError("TCPClient", "TCPClient", "Socket buffer size could not be set"));
+							ops::BasicError err("TCPClient", "TCPClient", "Socket buffer size could not be set");
+							Participant::reportStaticError(&err);
 						}
 					}
 
@@ -106,16 +113,18 @@ namespace ops
 					//if(sockOptErr != 0)
 					//{
 					//std::cout << "Failed to disable Nagle algorithm." << std::endl;
-					//Participant::reportStaticError(&ops::BasicError("Failed to disable Nagle algorithm."));
+					//ops::BasicError err("Failed to disable Nagle algorithm.");
+					//Participant::reportStaticError(&err);
 					//}
 
 					//  std::cout << "connected tcp asynch" << std::endl;
-					notifyNewEvent(BytesSizePair("", -5)); //Connection was down but has been reastablished.
+					notifyNewEvent(BytesSizePair(NULL, -5)); //Connection was down but has been reastablished.
 				}
 			}
-			// We decrement the counter as the last thing in the callback, so we don't access the object any more 
-			// in case the destructor is called and waiting for us to be finished.
-			InterlockedDecrement(&m_connectCounter);
+			// We update the "m_working" flag as the last thing in the callback, so we don't access the object any more 
+			// in case the destructor has been called and waiting for us to be finished.
+			// If we haven't started a new async call above, this will clear the flag.
+			m_working = m_asyncCallActive;
         }
 
         virtual ~TCPClient()
@@ -126,11 +135,12 @@ namespace ops
 			/// We must handle asynchronous callbacks that haven't finished yet.
 			/// This approach works, but the recommended boost way is to use a shared pointer to the instance object
 			/// between the "normal" code and the callbacks, so the callbacks can check if the object exists.
-			while (m_connectCounter || m_receiveCounter) 
+			while (m_working) { 
 				Sleep(1);
+			}
 
-			delete sock;
-            delete endpoint;
+			if (sock) delete sock;
+            if (endpoint) delete endpoint;
         }
 
         void asynchWait(char* bytes, int size)
@@ -140,18 +150,20 @@ namespace ops
 
             if (connected) {
                 //Always start by reading the packet size when using tcp
-				InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
+				// Set variables indicating that we are "active"
+				m_working = true;
+				m_asyncCallActive = true;
                 sock->async_receive(
                         boost::asio::buffer(data, 22),
                         boost::bind(&TCPClient::handle_receive_sizeInfo, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
             }
-
         }
 
         void handle_receive_sizeInfo(const boost::system::error_code& error, size_t nrBytesReceived)
         {
+			m_asyncCallActive = false;
 			if (!connected) {
-                notifyNewEvent(BytesSizePair("", -2));
+                notifyNewEvent(BytesSizePair(NULL, -2));
 
 			} else {
 				bool errorDetected = false;
@@ -160,7 +172,7 @@ namespace ops
 					accumulatedSize += nrBytesReceived;
 					if (accumulatedSize < 22)// we have not gotten the size pack yet
 					{
-						InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
+						m_asyncCallActive = true;
 						sock->async_receive(
 								boost::asio::buffer(data + accumulatedSize, 22 - accumulatedSize),
 								boost::bind(&TCPClient::handle_receive_sizeInfo, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
@@ -175,7 +187,7 @@ namespace ops
 							errorDetected = true;
 						} else {
 							max_length = sizeInfo;
-							InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
+							m_asyncCallActive = true;
 							sock->async_receive(
 									boost::asio::buffer(data, max_length),
 									boost::bind(&TCPClient::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
@@ -186,32 +198,35 @@ namespace ops
 				}
 
 				if (errorDetected) {
-					Participant::reportStaticError(&ops::BasicError("TCPClient", "handle_receive_sizeInfo", "Error in receive."));
-					notifyNewEvent(BytesSizePair("", -1));
+					ops::BasicError err("TCPClient", "handle_receive_sizeInfo", "Error in receive.");
+					Participant::reportStaticError(&err);
+					notifyNewEvent(BytesSizePair(NULL, -1));
 
 					//Close the socket and try to connect again
 					connected = false;
 					sock->close();
-					InterlockedIncrement(&m_connectCounter);	// keep track of outstanding requests
+					m_asyncCallActive = true;
 					sock->async_connect(*endpoint, boost::bind(&TCPClient::handleConnect, this, boost::asio::placeholders::error));
 				}
 			}
-			// We decrement the counter as the last thing in the callback, so we don't access the object any more 
-			// in case the destructor is called and waiting for us to be finished.
-			InterlockedDecrement(&m_receiveCounter);
+			// We update the "m_working" flag as the last thing in the callback, so we don't access the object any more 
+			// in case the destructor has been called and waiting for us to be finished.
+			// If we haven't started a new async call above, this will clear the flag.
+			m_working = m_asyncCallActive;
         }
 
         void handle_receive_from(const boost::system::error_code& error, size_t nrBytesReceived)
         {
+			m_asyncCallActive = false;
             if (!connected) {
-                notifyNewEvent(BytesSizePair("", -2));
+                notifyNewEvent(BytesSizePair(NULL, -2));
 
 			} else {
 				if (!error && nrBytesReceived > 0) {
 					accumulatedSize += nrBytesReceived;
 					if (accumulatedSize < max_length)// we have not gotten all bytes yet
 					{
-						InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
+						m_asyncCallActive = true;
 						sock->async_receive(
 								boost::asio::buffer(data + accumulatedSize, max_length - accumulatedSize),
 								boost::bind(&TCPClient::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
@@ -224,18 +239,19 @@ namespace ops
 				} else {
 					//handleReadError(error);
 					//printf("Error \n");
-					notifyNewEvent(BytesSizePair("", -1));
+					notifyNewEvent(BytesSizePair(NULL, -1));
 
 					//Close the socket and try to connect again
 					connected = false;
 					sock->close();
-					InterlockedIncrement(&m_connectCounter);	// keep track of outstanding requests
+					m_asyncCallActive = true;
 					sock->async_connect(*endpoint, boost::bind(&TCPClient::handleConnect, this, boost::asio::placeholders::error));
 				}
 			}
-			// We decrement the counter as the last thing in the callback, so we don't access the object any more 
-			// in case the destructor is called and waiting for us to be finished.
-			InterlockedDecrement(&m_receiveCounter);
+			// We update the "m_working" flag as the last thing in the callback, so we don't access the object any more 
+			// in case the destructor has been called and waiting for us to be finished.
+			// If we haven't started a new async call above, this will clear the flag.
+			m_working = m_asyncCallActive;
         }
 
     private:
@@ -252,9 +268,9 @@ namespace ops
 
         int accumulatedSize;
 
-		// Counters to keep track of our outstanding requests, that will result in callbacks to us
-		volatile LONG m_connectCounter;
-		volatile LONG m_receiveCounter;
+		// Variables to keep track of our outstanding requests, that will result in callbacks to us
+		volatile bool m_asyncCallActive;
+		volatile bool m_working;
     };
 }
 #endif

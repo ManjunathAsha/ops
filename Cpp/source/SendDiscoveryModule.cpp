@@ -1,3 +1,4 @@
+#ifdef NOT_USED_ANYMORE
 
 #include "OPSTypeDefs.h"
 #include "SendDiscoveryModule.h"
@@ -93,3 +94,5 @@ namespace ops
         }
     }
 }
+
+#endif // NOT_USED_ANYMORE

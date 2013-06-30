@@ -31,6 +31,7 @@
 #include <iostream>
 #include "Participant.h"
 #include "BasicError.h"
+#include "Compatibility.h"
 
 namespace ops
 {
@@ -40,8 +41,8 @@ namespace ops
 	{
 	public:
 		MulticastReceiver(std::string mcAddress, int bindPort, IOService* ioServ, std::string localInterface = "0.0.0.0", __int64 inSocketBufferSizent = 16000000): 
-		  max_length(65535), m_receiveCounter(0),
-		  cancelled(false)
+		  max_length(65535), m_asyncCallActive(false), m_working(false),
+		  cancelled(false), localEndpoint(NULL), sock(NULL)
 		{
 			ipaddress = mcAddress;
 			this->localInterface = localInterface;
@@ -69,14 +70,15 @@ namespace ops
 				
 			if(inSocketBufferSizent > 0)
 			{
-				boost::asio::socket_base::receive_buffer_size option(inSocketBufferSizent);
+				boost::asio::socket_base::receive_buffer_size option((int)inSocketBufferSizent);
 				boost::system::error_code ec;
 				ec = sock->set_option(option, ec);
 				sock->get_option(option);
 				if(ec != 0 || option.value() != inSocketBufferSizent)
 				{
 					//std::cout << "Socket buffer size could not be set" << std::endl;
-					Participant::reportStaticError(&ops::BasicError("MulticastReceiver", "MulticastReceiver", "Socket buffer size could not be set"));
+					ops::BasicError err("MulticastReceiver", "MulticastReceiver", "Socket buffer size could not be set");
+					Participant::reportStaticError(&err);
 				}
 			}
 			
@@ -94,21 +96,23 @@ namespace ops
 		///Override from Receiver
 		void stop()
 		{
-#if BOOST_VERSION == 103800
-			boost::system::error_code error(BREAK_COMM_ERROR_CODE, boost::system::generic_category );
-#else
-			boost::system::error_code error(BREAK_COMM_ERROR_CODE, boost::system::generic_category() );
-#endif
+//#if BOOST_VERSION == 103800
+//			boost::system::error_code error(BREAK_COMM_ERROR_CODE, boost::system::generic_category );
+//#else
+//			boost::system::error_code error(BREAK_COMM_ERROR_CODE, boost::system::generic_category() );
+//#endif
 			cancelled = true;
 			// sock->cancel(error);
-			sock->close();
+			if (sock) sock->close();
 		}
 
 		void asynchWait(char* bytes, int size)
 		{
 			data  = bytes;
 			max_length = size;
-			InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
+			// Set variables indicating that we are "active"
+			m_working = true;
+			m_asyncCallActive = true;
 			sock->async_receive(
 				boost::asio::buffer(data, max_length), 
 				boost::bind(&MulticastReceiver::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
@@ -116,6 +120,7 @@ namespace ops
 
 		void handle_receive_from(const boost::system::error_code& error, size_t nrBytesReceived)
 		{
+			m_asyncCallActive = false;	// No longer a call active, thou we may start a new one below
 			if (!cancelled) {
 				if (!error && nrBytesReceived > 0)
 				{
@@ -127,9 +132,10 @@ namespace ops
 					handleReadError(error);
 				}
 			}
-			// We decrement the counter as the last thing in the callback, so we don't access the object any more 
-			// in case the destructor is called and waiting for us to be finished.
-			InterlockedDecrement(&m_receiveCounter);	// keep track of outstanding requests
+			// We update the "m_working" flag as the last thing in the callback, so we don't access the object any more 
+			// in case the destructor has been called and waiting for us to be finished.
+			// If we haven't started a new async call above, this will clear the flag.
+			m_working = m_asyncCallActive;
 		}
 			
 		void handleReadOK(char* bytes_, int size)
@@ -147,17 +153,19 @@ namespace ops
 
 			//notifyNewEvent(data);
 			//printf("___________handleReadError__________ %d\n", error.value());
-			Participant::reportStaticError(&ops::BasicError("MulticastReceiver", "handleReadError", "Error"));
+			ops::BasicError err("MulticastReceiver", "handleReadError", "Error");
+			Participant::reportStaticError(&err);
 			
 			//WSAEFAULT (10014) "Illegal buffer address" is fatal, happens e.g. if a too small buffer is given and
 			// it probably wont go away by calling the same again, so just report error and then exit without 
 			// starting a new async_receive().
+#ifdef _WIN32
 			if (error.value() == WSAEFAULT) return;
+#else
+///TODO LINUX			if (error.value() == WSAEFAULT) return;
+#endif
 
-			InterlockedIncrement(&m_receiveCounter);	// keep track of outstanding requests
-			sock->async_receive(
-				boost::asio::buffer(data, max_length), 
-				boost::bind(&MulticastReceiver::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+			asynchWait(data, max_length);
 		}
 
 		~MulticastReceiver()
@@ -168,11 +176,12 @@ namespace ops
 			/// We must handle asynchronous callbacks that haven't finished yet.
 			/// This approach works, but the recommended boost way is to use a shared pointer to the instance object
 			/// between the "normal" code and the callbacks, so the callbacks can check if the object exists.
-			while (m_receiveCounter) 
+			while (m_working) {
 				Sleep(1);
+			}
 
-			delete sock;
-			delete localEndpoint;
+			if (sock) delete sock;
+			if (localEndpoint) delete localEndpoint;
 		}
 
 		int receive(char* buf, int size)
@@ -184,7 +193,8 @@ namespace ops
 			}
 			catch(...)
 			{
-				Participant::reportStaticError(&ops::BasicError("MulticastReceiver", "receive", "Exception in MulticastReceiver::receive()"));
+				ops::BasicError err("MulticastReceiver", "receive", "Exception in MulticastReceiver::receive()");
+				Participant::reportStaticError(&err);
 				return -1;
 			}
 		}
@@ -233,8 +243,9 @@ namespace ops
 		static const int BREAK_COMM_ERROR_CODE = 345676;
 		bool cancelled;
 
-		// Counter to keep track of our outstanding requests, that will result in callbacks to us
-		volatile LONG m_receiveCounter;
+		// Variables to keep track of our outstanding requests, that will result in callbacks to us
+		volatile bool m_asyncCallActive;
+		volatile bool m_working;
 	};
 }
 #endif

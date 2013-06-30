@@ -1,5 +1,5 @@
 
-#include <strstream>
+#include <sstream>
 
 #include "OPSTypeDefs.h"
 #include "SendDataHandlerFactory.h"
@@ -25,7 +25,7 @@ namespace ops
 		// We need to store SendDataHandlers with more than just the name as key.
 		// Since topics can use the same port, we need to return the same SendDataHandler.
 		// Make a key with the transport info that uniquely defines the receiver.
-		std::ostrstream myStream;
+		std::ostringstream myStream;
 		myStream << top.getPort() << std::ends;
 		std::string key = top.getTransport() + "::" + top.getDomainAddress() + "::" + myStream.str();
 

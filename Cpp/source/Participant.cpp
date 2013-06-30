@@ -17,7 +17,7 @@
 * You should have received a copy of the GNU Lesser General Public License
 * along with OPS (Open Publish Subscribe).  If not, see <http://www.gnu.org/licenses/>.
 */
-#include <strstream>
+#include <sstream>
 #include "OPSTypeDefs.h"
 #include "Participant.h"
 #include "SingleThreadPool.h"
@@ -27,7 +27,7 @@
 #include "SendDataHandlerFactory.h"
 #include "OPSObjectFactoryImpl.h"
 #include "CommException.h"
-
+#include "Publisher.h"
 
 namespace ops
 {
@@ -131,15 +131,16 @@ namespace ops
 		
 		// Initialize static data in partInfoData (ReceiveDataHandlerFactory() will set some more fields)
 		std::string Name;
-#ifdef _WIN32
 		char hname[1024];
 		hname[0] ='\0';
 		gethostname(hname, sizeof(hname));
-		std::ostrstream myStream;
+		std::ostringstream myStream;
+#ifdef _WIN32
 		myStream << hname << " (" << _getpid() << ")" << std::ends;
-		Name = myStream.str();
+#else
+		myStream << hname << " (" << getpid() << ")" << std::ends;
 #endif
-///TODO Linux
+		Name = myStream.str();
 		partInfoData.name = Name;
         partInfoData.languageImplementation = "c++";
         partInfoData.id = participantID;

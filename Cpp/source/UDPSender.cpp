@@ -61,14 +61,15 @@ namespace ops
 
 		if(outSocketBufferSize > 0)
 		{
-			boost::asio::socket_base::send_buffer_size option(outSocketBufferSize);
+			boost::asio::socket_base::send_buffer_size option((int)outSocketBufferSize);
 			boost::system::error_code ec;
 			ec = socket->set_option(option, ec);
 			socket->get_option(option);
 			if(ec != 0 || option.value() != outSocketBufferSize)
 			{
 				//std::cout << "Socket buffer size could not be set" << std::endl;
-				Participant::reportStaticError(&ops::BasicError("UDPSender", "UDPSender", "Socket buffer size could not be set"));
+				ops::BasicError err("UDPSender", "UDPSender", "Socket buffer size could not be set");
+				Participant::reportStaticError(&err);
 			}
 		}
 
@@ -109,14 +110,16 @@ namespace ops
         {
 			std::stringstream ss;
 			ss << "Error when sending udp message: " << ex.what() << " Params: buf = " << buf << ", size = " << size << ", ip = " << ip << ", port = " << port;  
-			Participant::reportStaticError(&ops::BasicError("UDPSender", "sendTo", ss.str()));
+			ops::BasicError err("UDPSender", "sendTo", ss.str());
+			Participant::reportStaticError(&err);
             return false;
         }
         catch (...)
         {
 			std::stringstream ss;
 			ss << "Error when sending udp message: Params: buf = " << buf << ", size = " << size << ", ip = " << ip << ", port = " << port;  
-			Participant::reportStaticError(&ops::BasicError("UDPSender", "sendTo", ss.str()));
+			ops::BasicError err("UDPSender", "sendTo", ss.str());
+			Participant::reportStaticError(&err);
             return false;
         }
 

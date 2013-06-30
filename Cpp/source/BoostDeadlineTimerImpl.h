@@ -25,6 +25,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "Participant.h"
 #include "BoostIOServiceImpl.h"
+#include "Compatibility.h"
 
 namespace ops
 {
@@ -32,13 +33,13 @@ namespace ops
 	{
 		boost::asio::deadline_timer deadlineTimer;
 		// Counter to keep track of our outstanding requests, that will result in callbacks to us
-		volatile LONG m_reqCounter;
+		volatile long m_reqCounter;
+		Lockable m_lock;
 	public:
 		BoostDeadlineTimerImpl(boost::asio::io_service* boostIOService) 
 			: m_reqCounter(0),
 			deadlineTimer(*boostIOService)
 		{
-
 		}
 		virtual void start(__int64 timeout) 
 		{
@@ -53,7 +54,10 @@ namespace ops
 			//	{
 			//std::cout << "expired" << std::endl;
 			deadlineTimer.cancel();
-			InterlockedIncrement(&m_reqCounter);
+		    {
+				SafeLock lock(&m_lock);
+				m_reqCounter++;
+			}
 			deadlineTimer.expires_from_now(boost::posix_time::milliseconds(timeout));
 			deadlineTimer.async_wait(boost::bind(&BoostDeadlineTimerImpl::asynchHandleDeadlineTimeout, this, boost::asio::placeholders::error));
 			/*
@@ -78,7 +82,10 @@ namespace ops
 			}
 			// We decrement the counter as the last thing in the callback, so we don't access the object any more 
 			// in case the destructor is called and waiting for us to be finished.
-			InterlockedDecrement(&m_reqCounter);
+		    {
+				SafeLock lock(&m_lock);
+				m_reqCounter--;
+			}
 		}
 		~BoostDeadlineTimerImpl()
 		{
@@ -91,6 +98,10 @@ namespace ops
 				cancel();
 				Sleep(1);
 			}
+			/// Take the lock as the last thing. This ensures that the lock is properly released
+			/// in the callback so we finally can let the object be deleted.
+			m_lock.lock();
+			m_lock.unlock();	// Must also release it to not get errors from boost when deleting
 		}
 	};
 }

@@ -22,47 +22,48 @@
 #include <boost/thread.hpp>
 namespace ops
 {
-	Thread::Thread() : started(false), thread(NULL), threadRunning(false)
+    Thread::Thread() : thread(NULL), threadRunning(false)
     {
-	}
+    }
     
     Thread::~Thread()
     {
-		if (thread) {
-			thread->interrupt();
-			// Wait for thread to exit before we delete it
-			thread->join();
-			delete thread;
-		}
-	}
+        stop();
+        join();
+    }
     
     int Thread::start()
-	{
-		if(!started)
-		{
-			thread = new boost::thread(&Thread::EntryPoint, this);
-			started = true;
-		}
-        return 0;
-	}
-
-	bool Thread::join()
-	{
-		if (thread) thread->join();
-		return true;
-    }
-   /* 
-	boost::thread* Thread::GetThreadHandle()
     {
-		return thread;
+        if (thread == NULL)
+        {
+            thread = new boost::thread(&Thread::EntryPoint, this);
+        }
+        return 0;
+    }
+
+    bool Thread::join()
+    {
+        if (thread) {
+            // Wait for thread to exit before we delete it
+            thread->join();
+            delete thread;
+            thread = NULL;
+        }
+        return true;
+    }
+    
+    /* 
+    boost::thread* Thread::GetThreadHandle()
+    {
+        return thread;
     }*/
     
     void Thread::stop()
     {
-		if (thread) thread->interrupt();
+        if (thread) thread->interrupt();
     }
     
-    /*static */ void  Thread::EntryPoint(void* pthis)
+    /*static */ void Thread::EntryPoint(void* pthis)
     {
         Thread* pt = (Thread*)pthis;
         pt->run();

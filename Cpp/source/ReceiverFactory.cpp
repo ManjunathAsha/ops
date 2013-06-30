@@ -18,7 +18,8 @@ namespace ops
         //This shopuld never happen, logg an internal error and return NULL;
         if (mcDomain == NULL || ioService == NULL)
         {
-            participant->reportError(&BasicError("ReceiverFactory", "getReceiver", "Unexpected error, mcDomain or ioServide == NULL"));
+			BasicError err("ReceiverFactory", "getReceiver", "Unexpected error, mcDomain or ioServide == NULL");
+            participant->reportError(&err);
             return receiver;
         }
 

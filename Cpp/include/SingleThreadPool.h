@@ -74,6 +74,14 @@ namespace ops
             }*/
         }
 
+	~SingleThreadPool() 
+        {
+            // We need to stop the thread explicitly so that the run() method exits
+            // before our mutex destructor is called.
+            Thread::stop();
+            Thread::join();
+        }
+        
     private:
         std::vector<Runnable*> runnables;
         boost::mutex mutex;

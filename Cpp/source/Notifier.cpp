@@ -1,3 +1,5 @@
+#ifdef NOT_USED_ANYMORE
+
 #include "OPSTypeDefs.h"
 #include "DataNotifier.h"
 
@@ -22,3 +24,5 @@ namespace ops
     }
     
 }
+
+#endif // NOT_USED_ANYMORE

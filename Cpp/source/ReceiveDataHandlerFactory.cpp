@@ -1,4 +1,4 @@
-#include <strstream>
+#include <sstream>
 
 #include "OPSTypeDefs.h"
 #include "ReceiveDataHandlerFactory.h"
@@ -24,7 +24,7 @@ namespace ops
 		if (top.getTransport() == Topic::TRANSPORT_UDP) {
 			return top.getTransport();
 		} else {
-			std::ostrstream myPort;
+			std::ostringstream myPort;
 			myPort << top.getPort() << std::ends;
 			return top.getTransport() + "::" + top.getDomainAddress() + "::" + myPort.str();
 		}
@@ -45,7 +45,7 @@ namespace ops
             // This will lead to a problem when using the same port or using UDP, if samples becomes > MAX_SEGMENT_SIZE
 			if ((rdh->getSampleMaxSize() > OPSConstants::PACKET_MAX_SIZE) || (top.getSampleMaxSize() > OPSConstants::PACKET_MAX_SIZE))
             {
-				std::ostrstream myMessage;
+				std::ostringstream myMessage;
 				if (top.getTransport() == Topic::TRANSPORT_UDP) {
 					myMessage <<
 						"Warning: UDP Transport is used with Topics with 'sampleMaxSize' > " << OPSConstants::PACKET_MAX_SIZE << std::ends;
@@ -54,7 +54,8 @@ namespace ops
 						"Warning: Same port (" << top.getPort() << 
 						") is used with Topics with 'sampleMaxSize' > " << OPSConstants::PACKET_MAX_SIZE << std::ends;
 				}
-				participant->reportError(&BasicError("ReceiveDataHandlerFactory", "getReceiveDataHandler", myMessage.str()));
+				BasicError err("ReceiveDataHandlerFactory", "getReceiveDataHandler", myMessage.str());
+				participant->reportError(&err);
             }
             return rdh;
         }
@@ -78,7 +79,8 @@ namespace ops
         else //For now we can not handle more transports
         {
             //Signal an error by returning NULL.
-			participant->reportError(&BasicError("ReceiveDataHandlerFactory", "getReceiveDataHandler", "Unknown transport for Topic: " + top.getName()));
+			BasicError err("ReceiveDataHandlerFactory", "getReceiveDataHandler", "Unknown transport for Topic: " + top.getName());
+			participant->reportError(&err);
             return NULL;
         }
     }

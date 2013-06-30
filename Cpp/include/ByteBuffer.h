@@ -131,7 +131,7 @@ namespace ops
         __int16 ReadShort();
         ///Reads 8 bytes from the buffer and returns them as a long long (__int64). Index is increased by 8.
         ///Byte order is swaped before return.
-        long long ReadLong();
+        __int64 ReadLong();
         ///Reads 1 byte from the buffer and returns it as a char. Index is increased by 1.
         char ReadChar();
         ///Reads an int (length) from the buffer followed by length number of chars returned as a sdt::string. Index is increased by length + 4.

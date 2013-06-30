@@ -35,12 +35,14 @@ namespace ops
             }
             else
             {
-                participant->reportError(&BasicError("ParticipantInfoDataListener", "onNewData", "Data could not be cast as expected."));
+				BasicError err("ParticipantInfoDataListener", "onNewData", "Data could not be cast as expected.");
+                participant->reportError(&err);
             }
         }
         else
         {
-            participant->reportError(&BasicError("ParticipantInfoDataListener", "onNewData", "Subscriber could not be cast as expected."));
+			BasicError err("ParticipantInfoDataListener", "onNewData", "Subscriber could not be cast as expected.");
+            participant->reportError(&err);
         }
     }
 
