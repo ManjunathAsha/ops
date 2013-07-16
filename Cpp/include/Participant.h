@@ -63,7 +63,7 @@ namespace ops
 		static Participant* getInstance(std::string domainID, std::string participantID);
 		static Participant* getInstance(std::string domainID, std::string participantID, std::string configFile);
 		
-		//Report an error via all participants ErrorServices
+		//Report an error via all participants ErrorServices or the static ErrorService if it exists
 		static void reportStaticError(Error* err);
 
 		//Create a Topic for subscribing or publishing on ParticipantInfoData
@@ -101,6 +101,12 @@ namespace ops
 		{
 			return errorService;
 		}
+
+		// A static error service that user could create, by calling getStaticErrorService(), and connect to. 
+		// If it exist, "reportStaticError()" will use this instead of using all participants errorservices
+		// which leads to duplicated error messages when several participants exist.
+		// This static errorservice also has the advantage that errors during Participant creation can be logged.
+		static ErrorService* getStaticErrorService();
 
 		Domain* getDomain()
 		{

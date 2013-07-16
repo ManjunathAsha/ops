@@ -26,6 +26,7 @@
 #include "ReceiveDataHandlerFactory.h"
 #include "SendDataHandlerFactory.h"
 #include "OPSObjectFactoryImpl.h"
+#include "ConfigException.h"
 #include "CommException.h"
 #include "Publisher.h"
 
@@ -35,6 +36,25 @@ namespace ops
 	std::map<std::string, Participant*> Participant::instances;
 	Lockable Participant::creationMutex;
 
+
+	// --------------------------------------------------------------------------------
+	// A static error service that user could create, by calling getStaticErrorService(), and connect to. 
+	// If it exist, "reportStaticError()" will use this instead of using all participants errorservices
+	// which leads to duplicated error messages when several participants exist.
+	// This static errorservice also has the advantage that errors during Participant creation can be logged.
+	static ErrorService* staticErrorService = NULL;
+
+	ErrorService* Participant::getStaticErrorService()
+	{
+		SafeLock lock(&creationMutex);
+		if (!staticErrorService) {
+			staticErrorService = new ErrorService();
+		}
+		return staticErrorService;
+	}
+
+
+	// --------------------------------------------------------------------------------
 
 	Participant* Participant::getInstance(std::string domainID_)
 	{
@@ -53,17 +73,24 @@ namespace ops
 			try
 			{
 				Participant* newInst = new Participant(domainID_, participantID, configFile);
-				Domain* tDomain = newInst->getDomain();
-
-				if (tDomain != NULL) {
-					instances[participantID] = newInst;
-				} else {
-					delete newInst;
-					return NULL;
+				instances[participantID] = newInst;
+			}
+			catch(ops::ConfigException ex)
+			{
+				BasicError err("Participant", "Participant", std::string("Exception: ") + ex.what());
+				reportStaticError(&err);
+				return NULL;
 				}
+			catch (ops::exceptions::CommException ex)
+			{
+				BasicError err("Participant", "Participant", ex.GetMessage());
+				reportStaticError(&err);
+				return NULL;
 			}
 			catch(...)
 			{
+				BasicError err("Participant", "Participant", "Unknown Exception");
+				reportStaticError(&err);
 				return NULL;
 			}
 		}
@@ -124,7 +151,11 @@ namespace ops
 
 		//Get the domain from config. Note should not be deleted, owned by config.
 		domain = config->getDomain(domainID);
-///TODO borde väl kolla att domain fanns i config???
+		if(!domain) 
+		{
+			exceptions::CommException ex(std::string("Domain '") + domainID + std::string("' missing in config-file"));
+			throw ex;
+		}
 
 		//Create a factory instance for each participant
 		objectFactory = new OPSObjectFactoryImpl();
@@ -243,20 +274,25 @@ namespace ops
 		return infoTopic;
 	}
 
-	//Report an error via the participants ErrorService
+	// Report an error via the participants ErrorService
 	void Participant::reportError(Error* err)
 	{
 		errorService->report(err);
 	}
 
-	//Report an error via all participants ErrorServices
+	// Report an error via all participants ErrorServices
 	void Participant::reportStaticError(Error* err)
 	{
-		std::map<std::string, Participant*>::iterator it = instances.begin();
-		while(it !=instances.end())
-		{
-			it->second->getErrorService()->report(err);
-			it++;
+		if (staticErrorService) {
+			staticErrorService->report(err);
+
+		} else {
+			std::map<std::string, Participant*>::iterator it = instances.begin();
+			while(it !=instances.end())
+			{
+				it->second->getErrorService()->report(err);
+				it++;
+			}
 		}
 	}
 
@@ -275,15 +311,27 @@ namespace ops
 		receiveDataHandlerFactory->cleanUpReceiveDataHandlers();
 
 		if (keepRunning) {
-			// Create the meta data publisher if user hasn't disabled it for the domain.
-			// The meta data publisher is only necessary if we have topics using transport UDP.
-			if ( (partInfoPub == NULL) && (domain->getMetaDataMcPort() > 0) )
+			try {
+				// Create the meta data publisher if user hasn't disabled it for the domain.
+				// The meta data publisher is only necessary if we have topics using transport UDP.
+				if ( (partInfoPub == NULL) && (domain->getMetaDataMcPort() > 0) )
+				{
+					partInfoPub = new Publisher(createParticipantInfoTopic());
+				}
+				if (partInfoPub) {
+					SafeLock lock(&partInfoDataMutex);
+					partInfoPub->writeOPSObject(&partInfoData);
+				}
+			} catch (std::exception ex)
 			{
-				partInfoPub = new Publisher(createParticipantInfoTopic());
-			}
-			if (partInfoPub) {
-				SafeLock lock(&partInfoDataMutex);
-				partInfoPub->writeOPSObject(&partInfoData);
+				std::string errMessage;
+				if (partInfoPub == NULL) {
+					errMessage = "Failed to create publisher for ParticipantInfoTopic. Check localInterface and metaDataMcPort in configuration file.";
+				} else {
+					errMessage = "Failed to publish ParticipantInfoTopic data.";
+				}
+				BasicError err("Participant", "onNewEvent", errMessage);
+				reportStaticError(&err);
 			}
 		}
 
