@@ -97,6 +97,10 @@ namespace ops
 	{
 		return port;
 	}
+	void Topic::setPort(int port)
+	{
+		this->port = port;
+	}
 	std::string Topic::getTransport()
 	{
 		return transport;
@@ -141,9 +145,11 @@ namespace ops
 		{
 			transport = TRANSPORT_MC;
 		}
-		else if (transport != TRANSPORT_TCP && transport != TRANSPORT_UDP)
+		else if (transport != TRANSPORT_MC && transport != TRANSPORT_TCP && transport != TRANSPORT_UDP)
 		{
-			throw ops::ConfigException("Transport in topic must be either 'multicast', 'tcp' or left blank( = multicast).");
+			throw ops::ConfigException(
+				std::string("Illegal transport: '") + transport +
+				std::string("'. Transport for topic must be either 'multicast', 'tcp', 'udp' or left blank( = multicast)"));
 		}
 	}
 

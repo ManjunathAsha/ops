@@ -39,24 +39,32 @@ namespace ops
         Topic(std::string namee, int portt, std::string typeIDd, std::string domainAddresss);
 		Topic();
 
-        void setParticipantID(std::string partID);
-		std::string getParticipantID();
 		void setDomainID(std::string domID);
-		void setTransport(std::string transp);
 		std::string getDomainID();
 
-        std::string getName();
-        std::string getTypeID();
-        std::string getDomainAddress();
+        void setParticipantID(std::string partID);
+		std::string getParticipantID();
+
+		void setTransport(std::string transp);
 		std::string getTransport();
+
+		std::string getName();
+        std::string getTypeID();
+
 		void setDomainAddress(std::string domainAddr);
-		int getSampleMaxSize();
+		std::string getDomainAddress();
+
 		void setSampleMaxSize(int size);
-        int getPort();
+		int getSampleMaxSize();
+
+		void setPort(int port);
+		int getPort();
+
 		void serialize(ArchiverInOut* archiver);
 
 		__int64 getOutSocketBufferSize();
 		void setOutSocketBufferSize(__int64 size);
+
 		__int64 getInSocketBufferSize();
 		void setInSocketBufferSize(__int64 size);
 
