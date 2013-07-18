@@ -116,7 +116,7 @@ namespace ops
 		objectFactory(NULL),
 		errorService(NULL), 
 		partInfoPub(NULL),
-		partInfoSub(NULL),
+		partInfoListener(NULL),
 		receiveDataHandlerFactory(NULL),
 		sendDataHandlerFactory(NULL),
 		aliveDeadlineTimer(NULL),
@@ -180,12 +180,8 @@ namespace ops
 		//-----------Create delegate helper classes---
 		errorService = new ErrorService();
 		receiveDataHandlerFactory = new ReceiveDataHandlerFactory(this);
-		sendDataHandlerFactory = new SendDataHandlerFactory();
+		sendDataHandlerFactory = new SendDataHandlerFactory(this);
 		//--------------------------------------------
-
-///		//------------Will be created when needed------
-///		partInfoPub = NULL;
-///		//-------------------------------------------
 
 		//------------Create timer for periodic events-
 		aliveDeadlineTimer = DeadlineTimer::create(ioService);
@@ -198,6 +194,12 @@ namespace ops
 		threadPool->addRunnable(this);
 		threadPool->start();
 		//--------------------------------------------
+
+		// Create the listener object for the participant info data published by participants on our domain.
+		// The actual subscriber won't be created until some one needs it.
+		// We use the information for topics with UDP as transport, to know the destination for UDP sends
+		// ie. we extract ip and port from the information and add it to our McUdpSendDataHandler.
+		partInfoListener = new ParticipantInfoDataListener(this);
 	}
 
 	Participant::~Participant()
@@ -221,10 +223,9 @@ namespace ops
 			partInfoPub = NULL;
 		}
 
-		// Stop and delete the subscriber for partInfoData. This requires ioService to be running.
-		// Note that this uses our receiveDataHandlerFactory.
-		if (partInfoSub) delete partInfoSub;
-		partInfoSub = NULL;
+		// Stop the subscriber for partInfoData. This requires ioService to be running.
+		// Note that this (the subscriber) uses our receiveDataHandlerFactory.
+		if (partInfoListener) partInfoListener->prepareForDelete();
 
 		// Now delete our send factory (TODO it does not cleanup correctly yet)
 		if (sendDataHandlerFactory) delete sendDataHandlerFactory;
@@ -242,7 +243,7 @@ namespace ops
 		if (aliveDeadlineTimer) delete aliveDeadlineTimer; 
 		aliveDeadlineTimer = NULL;
 
-		// Now time to delete our rceive factory
+		// Now time to delete our receive factory
 		if (receiveDataHandlerFactory) delete receiveDataHandlerFactory;
 		receiveDataHandlerFactory = NULL;
 
@@ -257,6 +258,7 @@ namespace ops
 		threadPool = NULL;
 
 		// Now when the threads are gone, it's safe to delete the rest of our objects 
+		if (partInfoListener) delete partInfoListener;
 		if (objectFactory) delete objectFactory;
 		if (errorService) delete errorService;
 		// All objects connected to this ioservice should now be deleted, so it should be safe to delete it

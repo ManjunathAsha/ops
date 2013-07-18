@@ -24,21 +24,39 @@
 #include "ParticipantInfoData.h"
 #include "Subscriber.h"
 #include "SendDataHandler.h"
+#include "Lockable.h"
 
 namespace ops
 {
 	class Participant;
+
 	class ParticipantInfoDataListener : public DataListener
 	{
 	public:
-		ParticipantInfoDataListener(SendDataHandler* sndDataHandler, Participant* part);
-		void onNewData(DataNotifier* notifier);
+		ParticipantInfoDataListener(Participant* part);
+
+		void prepareForDelete();
 		virtual ~ParticipantInfoDataListener();
 
+		void onNewData(DataNotifier* notifier);
+
+		void connectUdp(Topic& top, SendDataHandler* handler);
+		void disconnectUdp(Topic& top, SendDataHandler* handler);
+
+		void connectTcp(Topic& top, void* handler);
+		void disconnectTcp(Topic& top, void* handler);
+
 	private:
-		SendDataHandler* sendDataHandler;
 		Participant* participant;
-		
+
+		Lockable mutex;
+		Subscriber* partInfoSub;
+		SendDataHandler* sendDataHandler;
+
+		int numUdpTopics;
+
+		bool setupSubscriber();
+		void removeSubscriber();
 		
 	};
 

@@ -149,6 +149,7 @@ namespace ops
 		///A timer that fires with a certain periodicity, it keeps this Participant alive in the system by publishing ParticipantInfoData
 		DeadlineTimer* aliveDeadlineTimer;
 
+		//------------------------------------------------------------------------
 		///A publisher of ParticipantInfoData
 		Publisher* partInfoPub;
                 
@@ -156,13 +157,18 @@ namespace ops
 		ParticipantInfoData partInfoData;
 		Lockable partInfoDataMutex;
 
+		//Visible to friends only
 		void setUdpTransportInfo(std::string ip, int port);
 		bool hasPublisherOn(std::string topicName);
 
 		Domain* domain;		
 
-		Subscriber* partInfoSub;
+		//------------------------------------------------------------------------
+		///A listener and handler for ParticipantInfoData
+        ParticipantInfoDataListener* partInfoListener;
 
+		//------------------------------------------------------------------------
+		//
 		ReceiveDataHandlerFactory* receiveDataHandlerFactory;
 		SendDataHandlerFactory* sendDataHandlerFactory;
 

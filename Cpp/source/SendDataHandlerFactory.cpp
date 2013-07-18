@@ -4,7 +4,6 @@
 #include "OPSTypeDefs.h"
 #include "SendDataHandlerFactory.h"
 #include "SendDataHandler.h"
-#include "ParticipantInfoDataListener.h"
 #include "Participant.h"
 #include "McSendDataHandler.h"
 #include "McUdpSendDataHandler.h"
@@ -14,10 +13,16 @@
 namespace ops
 {
 
-	SendDataHandlerFactory::SendDataHandlerFactory()
+	SendDataHandlerFactory::SendDataHandlerFactory(Participant* part):
+		participant(part)
 	{	
 		// There is only one McUdpSendDataHandler for each participant
 		udpSendDataHandler = NULL;
+	}
+
+	SendDataHandlerFactory::~SendDataHandlerFactory()
+	{
+		///TODO cleanup
 	}
 	
 	SendDataHandler* SendDataHandlerFactory::getSendDataHandler(Topic& top, Participant* participant)
@@ -52,17 +57,13 @@ namespace ops
 				udpSendDataHandler = new McUdpSendDataHandler(localIf, 
 															  1,								//TODO: make ttl configurable.
 															  participant->getDomain()->getOutSocketBufferSize()); 
-
-				// Setup a listener on the participant info data published by participants on our domain.
-				// We use the information for topics with UDP as transport, to know the destination for UDP sends
-				// ie. we extract ip and port from the information and add it to our McUdpSendDataHandler
-				partInfoListener = new ParticipantInfoDataListener(udpSendDataHandler, participant);
-
-				participant->partInfoSub = new Subscriber(participant->createParticipantInfoTopic());
-				participant->partInfoSub->addDataListener(partInfoListener);
-
-				participant->partInfoSub->start();
 			}
+
+			// Setup a listener on the participant info data published by participants on our domain.
+			// We use the information for topics with UDP as transport, to know the destination for UDP sends
+			// ie. we extract ip and port from the information and add it to our McUdpSendDataHandler
+			participant->partInfoListener->connectUdp(top, udpSendDataHandler);
+
 			return udpSendDataHandler;
 		}
 		else if(top.getTransport() == Topic::TRANSPORT_TCP)
@@ -80,6 +81,11 @@ namespace ops
 	void SendDataHandlerFactory::releaseSendDataHandler(Topic& top, Participant* participant)
 	{
 		SafeLock lock(&mutex);
+		
+		if(top.getTransport() == Topic::TRANSPORT_UDP) {
+			participant->partInfoListener->disconnectUdp(top, udpSendDataHandler);
+		}
+
 ///TODO
 	}
 

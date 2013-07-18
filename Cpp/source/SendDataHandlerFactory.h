@@ -7,22 +7,22 @@
 namespace ops
 {
     class SendDataHandler;
-    class ParticipantInfoDataListener;
     class Participant;
 
     class SendDataHandlerFactory
     {
     private:
+		Participant* participant;
         SendDataHandler* udpSendDataHandler;
 
         std::map<std::string, SendDataHandler*> sendDataHandlers;
 
-        ParticipantInfoDataListener* partInfoListener;
-
         Lockable mutex;
 
     public:
-        SendDataHandlerFactory();
+        SendDataHandlerFactory(Participant* part);
+ 	    ~SendDataHandlerFactory();
+
         SendDataHandler* getSendDataHandler(Topic& top, Participant* participant);
         void releaseSendDataHandler(Topic& top, Participant* participant);
     };
