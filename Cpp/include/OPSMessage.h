@@ -36,7 +36,7 @@ namespace ops
         messageType(0),
         endianness(0),
         publisherPriority(),
-        port(0),
+        sourcePort(0),
         qosMask(0),
         publicationID(0),
         dataOwner(true)
@@ -67,18 +67,19 @@ namespace ops
         }
 
     private:
-        char messageType;
+        char messageType;			// Serialized
         char endianness;
-        char publisherPriority;
+        char publisherPriority;		// Serialized
         bool dataOwner;
-        int port;
+        int sourcePort;
+		std::string sourceIP;
         __int64 qosMask;
-        __int64 publicationID;
-        std::string publisherName;
-        std::string topicName;
-        std::string topLevelKey;
-        std::string address;
-        OPSObject* data;
+        __int64 publicationID;		// Serialized
+        std::string publisherName;	// Serialized
+        std::string topicName;		// Serialized
+        std::string topLevelKey;	// Serialized
+        std::string address;		// Serialized
+        OPSObject* data;			// Serialized
 
     public:
 
@@ -122,10 +123,23 @@ namespace ops
             return data;
         }
 
+		void setSource(std::string addr, int port)
+		{
+			sourceIP = addr;
+			sourcePort = port;
+		}
+
+		void getSource(std::string& addr, int& port)
+		{
+			addr = sourceIP;
+			port = sourcePort;
+		}
+
         void serialize(ArchiverInOut* archive)
         {
             OPSObject::serialize(archive);
-
+			
+			// Can't change/addto these without breaking compatbility
             archive->inout(std::string("messageType"), messageType);
             archive->inout(std::string("publisherPriority"), publisherPriority);
             archive->inout(std::string("publicationID"), publicationID);

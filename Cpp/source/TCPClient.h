@@ -127,6 +127,17 @@ namespace ops
 			m_working = m_asyncCallActive;
         }
 
+		// Used to get the sender IP and port for a received message
+		// Only safe to call in callback, before a new asynchWait() is called.
+		void getSource(std::string& address, int& port) 
+		{
+		    boost::system::error_code error;
+			boost::asio::ip::tcp::endpoint sendingEndPoint;
+			sendingEndPoint = sock->remote_endpoint( error );
+			address = sendingEndPoint.address().to_string();
+			port = sendingEndPoint.port();
+		}
+
         virtual ~TCPClient()
         {
 			// Make sure socket is closed
@@ -198,13 +209,18 @@ namespace ops
 				}
 
 				if (errorDetected) {
+					//Report error
 					ops::BasicError err("TCPClient", "handle_receive_sizeInfo", "Error in receive.");
 					Participant::reportStaticError(&err);
-					notifyNewEvent(BytesSizePair(NULL, -1));
 
-					//Close the socket and try to connect again
+					//Close the socket
 					connected = false;
 					sock->close();
+
+					//Notify our user
+					notifyNewEvent(BytesSizePair(NULL, -1));
+
+					//Try to connect again
 					m_asyncCallActive = true;
 					sock->async_connect(*endpoint, boost::bind(&TCPClient::handleConnect, this, boost::asio::placeholders::error));
 				}
@@ -237,13 +253,14 @@ namespace ops
 						accumulatedSize = 0;
 					}
 				} else {
-					//handleReadError(error);
-					//printf("Error \n");
-					notifyNewEvent(BytesSizePair(NULL, -1));
-
-					//Close the socket and try to connect again
+					//Close the socket
 					connected = false;
 					sock->close();
+
+					//Notify our user
+					notifyNewEvent(BytesSizePair(NULL, -1));
+
+					//Try to connect again
 					m_asyncCallActive = true;
 					sock->async_connect(*endpoint, boost::bind(&TCPClient::handleConnect, this, boost::asio::placeholders::error));
 				}

@@ -103,6 +103,11 @@ namespace ops
             return;
         }
 
+		///TODO Check that all segments come from the same source (IP and port)
+		std::string addr;
+		int port;
+		receiver->getSource(addr, port);
+
         //Create a temporay map and buf to peek data before putting it in to memMap
         MemoryMap tMap(memMap.getSegment(expectedSegment), memMap.getSegmentSize());
         ByteBuffer tBuf(&tMap);
@@ -110,7 +115,6 @@ namespace ops
         //Check protocol
         if (tBuf.checkProtocol())
         {
-
             //Read of message ID and fragmentation info, this is ignored so far.
             //std::string messageID = tBuf.ReadString();
             int nrOfFragments = tBuf.ReadInt();
@@ -166,6 +170,9 @@ namespace ops
 					{
 						//Put spare bytes in data of message
 						calculateAndSetSpareBytes(buf, segmentPaddingSize);
+
+						// Add IP and port for source as meta data into OPSMessage
+						message->setSource(addr, port);
 
 						//Add message to a reference handler that will keep the message until it is no longer needed.
 						messageReferenceHandler.addReservable(message);

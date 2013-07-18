@@ -113,14 +113,24 @@ namespace ops
 			// Set variables indicating that we are "active"
 			m_working = true;
 			m_asyncCallActive = true;
-			sock->async_receive(
+			sock->async_receive_from(
 				boost::asio::buffer(data, max_length), 
+				sendingEndPoint,
 				boost::bind(&MulticastReceiver::handle_receive_from, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+		}
+
+		// Used to get the sender IP and port for a received message
+		// Only safe to call in callback, before a new asynchWait() is called.
+		void getSource(std::string& address, int& port) 
+		{
+			address = sendingEndPoint.address().to_string();
+			port = sendingEndPoint.port();
 		}
 
 		void handle_receive_from(const boost::system::error_code& error, size_t nrBytesReceived)
 		{
 			m_asyncCallActive = false;	// No longer a call active, thou we may start a new one below
+
 			if (!cancelled) {
 				if (!error && nrBytesReceived > 0)
 				{
@@ -236,6 +246,8 @@ namespace ops
 		boost::asio::ip::udp::endpoint* localEndpoint;
 		boost::asio::ip::udp::endpoint lastEndpoint;
 		boost::asio::io_service* ioService;
+
+		boost::asio::ip::udp::endpoint sendingEndPoint;
 
 		int max_length;
 		char* data;
