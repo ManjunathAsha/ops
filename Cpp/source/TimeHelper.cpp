@@ -21,11 +21,16 @@
 #include "TimeHelper.h"
 
 #include <sstream>
-#include "boost/date_time/local_time/local_time.hpp"
+#include <boost/date_time/local_time/local_time.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/xtime.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/version.hpp>
+
+#if BOOST_VERSION < 105000
+#define TIME_UTC_ TIME_UTC
+#endif
 
 namespace ops
 {
@@ -40,7 +45,7 @@ namespace ops
     void TimeHelper::sleep(__int64 millis)
     {
         boost::xtime xt;
-        boost::xtime_get(&xt, boost::TIME_UTC);
+        boost::xtime_get(&xt, boost::TIME_UTC_);
 
 
         int seconds = (int) (millis / 1000.0);
