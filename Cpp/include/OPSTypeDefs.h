@@ -18,16 +18,8 @@
 
 #include "inttypes.h"
 
-#define NETWORK_BYTE_ORDER
-
-
-
-
-    typedef  int64_t __int64;
-    typedef  int16_t __int16;
-
-
-
+typedef  int64_t __int64;
+typedef  int16_t __int16;
 
 #endif
 

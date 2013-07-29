@@ -19,7 +19,8 @@
  */
 #include "OPSTypeDefs.h"
 #include "ByteBuffer.h"
-//#include <boost/asio.hpp>
+
+#undef ON_BIG_ENDIAN_MACHINE
 
 namespace ops
 {
@@ -31,17 +32,6 @@ namespace ops
         memMap = mMap;
         currentSegment = 0;
         nextSegmentAt = memMap->getSegmentSize();
-        //writeNewSegment();
-        /*
-        index = 0;
-        buffer = new char*[1];
-buffer[0] = buf;
-        segmentSize = bufSize;
-        nextSegmentAt = segmentSize;
-        nrOfSegments = 1;
-        currentSegment = -1;
-
-        writeNewSegment();*/
     }
 
     int ByteBuffer::getNrOfSegments()
@@ -57,8 +47,6 @@ buffer[0] = buf;
         }
         else
         {
-            //int bytesLeftInSegment = getSegmentSize() - index;
-            //int lastSegmentSize = memMap->getSegmentSize() - bytesLeftInSegment;
             return index;
         }
     }
@@ -83,30 +71,14 @@ buffer[0] = buf;
         }
         index = oldIndex;
         nextSegmentAt = oldNextSegmentAt;
-
     }
-
-    /*ByteBuffer::ByteBuffer(char** buf, int nrSegs, int segSize)
-{
-            index = 0;
-    buffer = buf;
-            segmentSize = segSize;
-            nextSegmentAt = segmentSize;
-            nrOfSegments = nrSegs;
-            currentSegment = -1;
-
-            writeNewSegment();
-}*/
 
     ByteBuffer::~ByteBuffer()
     {
-
-        //delete buffer;
     }
 
     void ByteBuffer::WriteChars(char* chars, int length)
     {
-        //int bytesLeftInSegment = nextSegmentAt - index;
         int bytesLeftInSegment = memMap->getSegmentSize() - index;
         if (bytesLeftInSegment >= length)
         {
@@ -124,7 +96,6 @@ buffer[0] = buf;
             writeNewSegment();
             WriteChars(chars + bytesLeftInSegment, length - bytesLeftInSegment);
         }
-
     }
 
     void ByteBuffer::writeNewSegment()
@@ -132,25 +103,21 @@ buffer[0] = buf;
         index = 0;
         writeProtocol();
         int tInt = 0;
-        WriteInt(tInt); //memMap->getNrOfSegments());
+        WriteInt(tInt); 
         WriteInt(currentSegment);
-
     }
 
     void ByteBuffer::readNewSegment()
     {
         index = 0;
         nextSegmentAt += memMap->getSegmentSize();
-        //currentSegment++;
         bool ok = checkProtocol();
         int i1 = ReadInt();
         int i2 = ReadInt();
-
     }
 
     void ByteBuffer::ReadChars(char* chars, int length)
     {
-        //int bytesLeftInSegment = nextSegmentAt - index;
         int bytesLeftInSegment = memMap->getSegmentSize() - index;
         if (bytesLeftInSegment >= length)
         {
@@ -167,10 +134,6 @@ buffer[0] = buf;
             readNewSegment();
             ReadChars(chars + bytesLeftInSegment, length - bytesLeftInSegment);
         }
-
-        //memcpy((void*)chars, buffer + index, length);
-        //index += length;
-
     }
 
     void ByteBuffer::ByteSwap(unsigned char * b, int n)
@@ -186,74 +149,54 @@ buffer[0] = buf;
 
     int ByteBuffer::GetSize()
     {
-        return totalSize; //was index
+        return totalSize; 
     }
 
-    void ByteBuffer::WriteFloat(float& f)
+	// -----------------------------------------------------------------
+
+    void ByteBuffer::WriteFloat(float f)
     {
-#ifndef NETWORK_BYTE_ORDER
-        ByteSwap((unsigned char*) & f, 4);
+#ifdef ON_BIG_ENDIAN_MACHINE
+        ByteSwap((unsigned char*)&f, 4);
 #endif
-
-        WriteChars(((char*) & f), 4);
-        //memcpy((void*)(buffer + index), &f, 4);
-        //index += 4;
-
+        WriteChars(((char*)&f), 4);
     }
 
-    void ByteBuffer::WriteInt(int& i)
+    void ByteBuffer::WriteInt(int i)
     {
-#ifndef NETWORK_BYTE_ORDER
-        ByteSwap((unsigned char*) & i, 4);
+#ifdef ON_BIG_ENDIAN_MACHINE
+        ByteSwap((unsigned char*)&i, 4);
 #endif
-        WriteChars(((char*) & i), 4);
-        //memcpy((void*)(buffer + index), &i, 4);
-        //index += 4;
-
+        WriteChars(((char*)&i), 4);
     }
 
-    void ByteBuffer::WriteShort(__int16& i)
+    void ByteBuffer::WriteShort(__int16 i)
     {
-#ifndef NETWORK_BYTE_ORDER
-        ByteSwap((unsigned char*) & i, 2);
+#ifdef ON_BIG_ENDIAN_MACHINE
+        ByteSwap((unsigned char*)&i, 2);
 #endif
-        WriteChars(((char*) & i), 2);
-        //memcpy((void*)(buffer + index), &i, 4);
-        //index += 4;
-
+        WriteChars(((char*)&i), 2);
     }
 
-    void ByteBuffer::WriteLong(__int64& l)
+    void ByteBuffer::WriteLong(__int64 l)
     {
-#ifndef NETWORK_BYTE_ORDER
-        ByteSwap((unsigned char*) & l, 8);
+#ifdef ON_BIG_ENDIAN_MACHINE
+        ByteSwap((unsigned char*)&l, 8);
 #endif
-        WriteChars(((char*) & l), 8);
-        //memcpy((void*)(buffer + index), &l, 8);
-        //index += 8;
-
+        WriteChars(((char*)&l), 8);
     }
 
-    void ByteBuffer::WriteDouble(double& d)
+    void ByteBuffer::WriteDouble(double d)
     {
-#ifndef NETWORK_BYTE_ORDER
-        ByteSwap((unsigned char*) & d, 8);
+#ifdef ON_BIG_ENDIAN_MACHINE
+        ByteSwap((unsigned char*)&d, 8);
 #endif
-        WriteChars(((char*) & d), 8);
-        //memcpy((void*)(buffer + index), &d, 8);
-        //index += 8;
-
+		WriteChars(((char*)&d), 8);
     }
 
-    void ByteBuffer::WriteChar(char& c)
+    void ByteBuffer::WriteChar(char c)
     {
-        /*#ifndef NETWORK_BYTE_ORDER
-                ByteSwap((unsigned char*)&c, 1);
-        #endif
-buffer[index] = c;
-index += 1;*/
         WriteChars(&c, 1);
-
     }
 
     void ByteBuffer::WriteString(std::string& s)
@@ -261,14 +204,11 @@ index += 1;*/
         int siz = (int) s.size();
         WriteInt(siz);
         WriteChars((char*) s.c_str(), s.size());
-
-        //memcpy((void*)(buffer + index), s.c_str(), s.size());
-        //(char*)(buffer + index) = (char*)s.c_str();
-        //index += (int)s.size();
-
-
     }
-    //  void ByteBuffer::WriteOPSObject(OPSObject* o, OPSObjectHelper* oh)
+
+	// -----------------------------------------------------------------
+
+	//  void ByteBuffer::WriteOPSObject(OPSObject* o, OPSObjectHelper* oh)
     //  {
     //      int size = oh->getSize(o);
     ///*if(size > (Manager::MAX_SIZE - index))
@@ -281,6 +221,7 @@ index += 1;*/
     //index += size;
     //      //delete oh;
     //  }
+
     /*void ByteBuffer::WriteOPSObjectFields(OPSObject* o)
     {
         
@@ -313,91 +254,76 @@ index += 1;*/
     //      return o;
     //  }
 
+	// -----------------------------------------------------------------
+
     float ByteBuffer::ReadFloat()
     {
         float ret = 0;
-
-        ReadChars((char*) & ret, 4);
-#ifndef NETWORK_BYTE_ORDER
-        ByteSwap((unsigned char*) & ret, 4);
+        ReadChars((char*)&ret, 4);
+#ifdef ON_BIG_ENDIAN_MACHINE
+        ByteSwap((unsigned char*)&ret, 4);
 #endif
         return ret;
-
     }
 
     double ByteBuffer::ReadDouble()
     {
         double ret = 0;
-
-        ReadChars((char*) & ret, 8);
-#ifndef NETWORK_BYTE_ORDER
-        ByteSwap((unsigned char*) & ret, 8);
+        ReadChars((char*)&ret, 8);
+#ifdef ON_BIG_ENDIAN_MACHINE
+        ByteSwap((unsigned char*)&ret, 8);
 #endif
         return ret;
-
     }
 
     int ByteBuffer::ReadInt()
     {
         int ret = 0;
-        ReadChars((char*) & ret, 4);
-
-#ifndef NETWORK_BYTE_ORDER
-        ByteSwap((unsigned char*) & ret, 4);
+        ReadChars((char*)&ret, 4);
+#ifdef ON_BIG_ENDIAN_MACHINE
+        ByteSwap((unsigned char*)&ret, 4);
 #endif
         return ret;
-
     }
 
     __int16 ByteBuffer::ReadShort()
     {
         __int16 ret = 0;
-        ReadChars((char*) & ret, 2);
-
-#ifndef NETWORK_BYTE_ORDER
-        ByteSwap((unsigned char*) & ret, 2);
+        ReadChars((char*)&ret, 2);
+#ifdef ON_BIG_ENDIAN_MACHINE
+        ByteSwap((unsigned char*)&ret, 2);
 #endif
         return ret;
-
     }
 
     __int64 ByteBuffer::ReadLong()
     {
         __int64 ret = 0;
-        ReadChars((char*) & ret, 8);
-#ifndef NETWORK_BYTE_ORDER
-        ByteSwap((unsigned char*) & ret, 8);
+        ReadChars((char*)&ret, 8);
+#ifdef ON_BIG_ENDIAN_MACHINE
+        ByteSwap((unsigned char*)&ret, 8);
 #endif
         return ret;
-
     }
 
     char ByteBuffer::ReadChar()
     {
         char ret = 0;
-
-        ReadChars((char*) & ret, 1);
-
+        ReadChars((char*)&ret, 1);
         return ret;
-
     }
 
     std::string ByteBuffer::ReadString()
     {
-
-        //ByteSwap((unsigned char*)(buffer + index), 4);
         int length = ReadInt();
         char* text = new char[length];
         ReadChars(text, length);
-        //text = (buffer + index);
         std::string ret(text, length);
-        //std::string ret((buffer + index), length);
-        //index += length;
-
         delete[] text;
         return ret;
-
     }
+
+	// -----------------------------------------------------------------
 
     /*void ByteBuffer::ReadOPSObjectFields(ops::OPSObject* o)
     {
@@ -406,9 +332,7 @@ index += 1;*/
             o->key = ReadString();
             o->publicationID = ReadInt();
             o->publicationPriority = ReadChar();
-    o->typesString = ReadString();
-
-
+		    o->typesString = ReadString();
     }*/
 
 
@@ -421,9 +345,6 @@ index += 1;*/
         {
             out[i] = ReadChar() > 0;
         }
-        //std::copy((double*)buffer + index, (double*)buffer + index + size, out.begin());
-        //index += size*8;
-
     }
 
     void ByteBuffer::WriteBooleans(std::vector<bool>& out)
@@ -444,7 +365,6 @@ index += 1;*/
         out.reserve(length);
         out.resize(length, 0);
         ReadBytes(out, 0, length);
-
     }
 
     void ByteBuffer::ReadBytes(std::vector<char>& out, int offset, int length)
@@ -478,7 +398,6 @@ index += 1;*/
             ReadBytes(out, offset + bytesLeftInSegment, length - bytesLeftInSegment);
             //WriteChars(chars + bytesLeftInSegment, length - bytesLeftInSegment);
         }
-
     }
 
     void ByteBuffer::WriteBytes(std::vector<char>& out)
@@ -486,29 +405,21 @@ index += 1;*/
         int size = out.size();
         WriteInt(size);
         WriteBytes(out, 0, size);
-
     }
 
     void ByteBuffer::WriteBytes(std::vector<char>& out, int offset, int length)
     {
-        //int bytesLeftInSegment = nextSegmentAt - index;
         int bytesLeftInSegment = memMap->getSegmentSize() - index;
         std::vector<char>::iterator it = out.begin();
         it += offset;
         if (bytesLeftInSegment > length)
         {
-            //memcpy((void*)(buffer + index), chars, length);
-            //index += length;
             std::copy(it, out.end(), memMap->getSegment(currentSegment) + index);
             index += length;
             totalSize += length;
         }
         else
         {
-            //memcpy((void*)(buffer + index), chars, bytesLeftInSegment);
-            //index += bytesLeftInSegment;
-
-            //WriteBytes(out, offset, bytesLeftInSegment);
             std::copy(it, it + bytesLeftInSegment, memMap->getSegment(currentSegment) + index);
             index += bytesLeftInSegment;
             totalSize += bytesLeftInSegment;
@@ -518,10 +429,7 @@ index += 1;*/
             writeNewSegment();
 
             WriteBytes(out, offset + bytesLeftInSegment, length - bytesLeftInSegment);
-            //WriteChars(chars + bytesLeftInSegment, length - bytesLeftInSegment);
         }
-
-
     }
 
     void ByteBuffer::ReadDoubles(std::vector<double>& out)
@@ -532,14 +440,13 @@ index += 1;*/
         if (size > 0)
         {
             ReadChars((char*) & out[0], size * 8);
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 8);
             }
 #endif
         }
-
     }
 
     void ByteBuffer::WriteDoubles(std::vector<double>& out)
@@ -548,21 +455,20 @@ index += 1;*/
         WriteInt(size);
         if (size > 0)
         {
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 8);
             }
 #endif
             WriteChars((char*) & out[0], size * 8);
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 8);
             }
 #endif
         }
-
     }
 
     void ByteBuffer::ReadInts(std::vector<int>& out)
@@ -573,14 +479,13 @@ index += 1;*/
         if (size > 0)
         {
             ReadChars((char*) & out[0], size * 4);
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 4);
             }
 #endif
         }
-
     }
 
     void ByteBuffer::WriteInts(std::vector<int>& out)
@@ -589,15 +494,15 @@ index += 1;*/
         WriteInt(size);
         if (size > 0)
         {
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 4);
             }
 #endif
             WriteChars((char*) & out[0], size * 4);
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 4);
             }
@@ -613,14 +518,13 @@ index += 1;*/
         if (size > 0)
         {
             ReadChars((char*) & out[0], size * 2);
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 2);
             }
 #endif
         }
-
     }
 
     void ByteBuffer::WriteShorts(std::vector<__int16>& out)
@@ -629,16 +533,15 @@ index += 1;*/
         WriteInt(size);
         if (size > 0)
         {
-
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 2);
             }
 #endif
             WriteChars((char*) & out[0], size * 2);
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 2);
             }
@@ -654,14 +557,13 @@ index += 1;*/
         if (size > 0)
         {
             ReadChars((char*) & out[0], size * 4);
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 4);
             }
 #endif
         }
-
     }
 
     void ByteBuffer::WriteFloats(std::vector<float>& out)
@@ -670,21 +572,20 @@ index += 1;*/
         WriteInt(size);
         if (size > 0)
         {
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 4);
             }
 #endif
             WriteChars((char*) & out[0], size * 4);
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 4);
             }
 #endif
         }
-
     }
 
     void ByteBuffer::ReadLongs(std::vector<__int64>& out)
@@ -695,14 +596,13 @@ index += 1;*/
         if (size > 0)
         {
             ReadChars((char*) & out[0], size * 8);
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 8);
             }
 #endif
         }
-
     }
 
     void ByteBuffer::WriteLongs(std::vector<__int64>& out)
@@ -711,15 +611,15 @@ index += 1;*/
         WriteInt(size);
         if (size > 0)
         {
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 8);
             }
 #endif
             WriteChars((char*) & out[0], size * 8);
-#ifndef NETWORK_BYTE_ORDER
-            for(int i = 0; i < out.size() ; i++)
+#ifdef ON_BIG_ENDIAN_MACHINE
+            for(unsigned int i = 0; i < out.size() ; i++)
             {
                 ByteSwap((unsigned char*) &out[i], 8);
             }
@@ -736,9 +636,6 @@ index += 1;*/
         {
             out[i] = ReadString();
         }
-        //std::copy((double*)buffer + index, (double*)buffer + index + size, out.begin());
-        //index += size*8;
-
     }
 
     void ByteBuffer::WriteStrings(std::vector<std::string>& out)
@@ -757,15 +654,13 @@ index += 1;*/
         static char versionLow = 5;
         static std::string protocolID("opsp");
 
-        char* inProtocolIDChars = new char[5];
-        ReadChars(inProtocolIDChars, 4);
+        char inProtocolIDChars[5];
+        ReadChars(&inProtocolIDChars[0], 4);
         inProtocolIDChars[4] = '\0';
         std::string inProtocolId(inProtocolIDChars);
-        delete inProtocolIDChars;
 
         if (inProtocolId != protocolID)
         {
-            //printf("data refused\n");
             return false;
         }
 
@@ -774,12 +669,10 @@ index += 1;*/
 
         if ((inVersionHigh != versionHigh) || (inVersionLow != versionLow))
         {
-            //printf("data refused\n");
             return false;
         }
 
         return true;
-
     }
 
     void ByteBuffer::writeProtocol()
@@ -792,14 +685,11 @@ index += 1;*/
 
         WriteChar(versionLow);
         WriteChar(versionHigh);
-
-
     }
 
     void ByteBuffer::ResetIndex()
     {
         index = 0;
     }
-
 
 }

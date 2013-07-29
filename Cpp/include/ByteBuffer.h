@@ -24,10 +24,6 @@
 #include <vector>
 #include "MemoryMap.h"
 #include "OPSObject.h"
-//#include "Manager.h"
-
-#define NETWORK_BYTE_ORDER
-
 
 namespace ops
 { 
@@ -40,15 +36,13 @@ namespace ops
 	{
     private:
         ///Buffer used to store data to be written or read.
-        //char** buffer;
 		MemoryMap* memMap;
         ///index pointing out where in the buffer to do the next read or write.
-        ///This variable is automatically incremented by the read and write  operations.
+        ///This variable is automatically incremented by the read and write operations.
         int index;
 
 		int totalSize;
 
-		//int segmentSize;
 		int nextSegmentAt;
 		int currentSegment;
 		int nrOfSegments;
@@ -69,15 +63,10 @@ namespace ops
      
     public:
         
-        ///Constructor: @arg buf is the prealocated buffer to be used for reading or writing
-        //ByteBuffer(char* buf, int bufSize);
-		//////Constructor: @arg buf is the prealocated pointer to buffers to be used for reading or writing
-		//ByteBuffer::ByteBuffer(char** buf, int nrSegs, int segSize);
 		ByteBuffer(MemoryMap* mMap);
-
         
         ///Only valid for a ByteBuffer instance used to write data.
-        ///Returns the the number of bytes containing valid data in the buffer so far.
+        ///Returns the number of bytes containing valid data in the buffer so far.
         int GetSize();
 
 		///Resets the internal offset pointer to 0 (zero)
@@ -88,28 +77,26 @@ namespace ops
 		char* getSegment(int i);
 		void finish();
 
-
-        //char* GetBuffer(){return buffer;}
-        
         ///Writes the 4 bytes making up f to the buffer and increments index by 4.
         ///Byte order is swaped before writing takes place.
-        void WriteFloat(float& f);
+        void WriteFloat(float f);
         ///Writes the 4 bytes making up i to the buffer and increments index by 4.
         ///Byte order is swaped before writing takes place.
-        void WriteInt(int& i);
+        void WriteInt(int i);
 		//Writes the 2 bytes making up i to the buffer and increments index by 4.
         ///Byte order is swaped before writing takes place.
-        void WriteShort(__int16& i);
+        void WriteShort(__int16 i);
         ///Writes the 8 bytes making up l to the buffer and increments index by 8.
         ///Byte order is swaped before writing takes place.
-        void WriteLong(__int64& l);
+        void WriteLong(__int64 l);
         ///Writes the 8 bytes making up d to the buffer and increments index by 4.
         ///Byte order is swaped before writing takes place.
-        void WriteDouble(double& d);
+        void WriteDouble(double d);
         ///Writes c to the buffer and increments index by 1.
-        void WriteChar(char& c);
+        void WriteChar(char c);
         ///Writes s.size() followed by s to the buffer as a c-string (8-bit chars) and increments the buffer by s.size() + 4.
         void WriteString(std::string& s);
+
         ///Writes size(o) followed by the bytes making up o to the buffer and increments index by size(o) + 4
         ///IMPORTANT: oh must be an OPSObjectHelper for sub type of o. No check that this is the case is performed.
         //void WriteOPSObject(OPSObject* o, OPSObjectHelper* oh);
@@ -117,7 +104,8 @@ namespace ops
         ///Reads size of and an OPSObject from the buffer and increments index by the first read size.
         ///oh must be an OPSObjectHelper for the corresponding type that wants to be read.
         //OPSObject* ReadOPSObject(OPSObjectHelper* oh);
-        ///Reads 4 bytes from the buffer and returns them as a float. Index is increased by 4.
+        
+		///Reads 4 bytes from the buffer and returns them as a float. Index is increased by 4.
         ///Byte order is swaped before return.
         float ReadFloat();
         ///Reads 8 bytes from the buffer and returns them as a double. Index is increased by 8.
@@ -163,8 +151,6 @@ namespace ops
 
 		void writeProtocol();
 		bool checkProtocol();
-        //OPSObject* readDataHeader();
-        //void writeDataHeader(const OPSObject* header);
         
         //Destructor does not do anything buffer should be created and deleted by user of this class.
         ~ByteBuffer(void);

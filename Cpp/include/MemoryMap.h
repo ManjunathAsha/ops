@@ -96,7 +96,7 @@ public:
 			}
 			delete bytes;
 		}
-		else //Do not delete indivdual segments.
+		else //Do not delete individual segments.
 		{
 			delete bytes;
 		}
