@@ -1,3 +1,4 @@
+#include <string>
 #include "OPSTypeDefs.h"
 #include "Reservable.h"
 #include "ReferenceHandler.h"
