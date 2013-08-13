@@ -69,25 +69,25 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\..\..\Examples\PizzaProject\Generated\C#\PizzaProject\PizzaProjectTypeFactory.cs">
+    <Compile Include="..\..\..\..\Examples\OPSIdls\PizzaProject\Generated\C#\PizzaProject\PizzaProjectTypeFactory.cs">
       <Link>pizza\PizzaProjectTypeFactory.cs</Link>
     </Compile>
-    <Compile Include="..\..\..\..\Examples\PizzaProject\Generated\C#\pizza\CapricosaData.cs">
+    <Compile Include="..\..\..\..\Examples\OPSIdls\PizzaProject\Generated\C#\pizza\CapricosaData.cs">
       <Link>pizza\CapricosaData.cs</Link>
     </Compile>
-    <Compile Include="..\..\..\..\Examples\PizzaProject\Generated\C#\pizza\PizzaData.cs">
+    <Compile Include="..\..\..\..\Examples\OPSIdls\PizzaProject\Generated\C#\pizza\PizzaData.cs">
       <Link>pizza\PizzaData.cs</Link>
     </Compile>
-    <Compile Include="..\..\..\..\Examples\PizzaProject\Generated\C#\pizza\special\Cheese.cs">
+    <Compile Include="..\..\..\..\Examples\OPSIdls\PizzaProject\Generated\C#\pizza\special\Cheese.cs">
       <Link>pizza\Cheese.cs</Link>
     </Compile>
-    <Compile Include="..\..\..\..\Examples\PizzaProject\Generated\C#\pizza\special\ExtraAllt.cs">
+    <Compile Include="..\..\..\..\Examples\OPSIdls\PizzaProject\Generated\C#\pizza\special\ExtraAllt.cs">
       <Link>pizza\ExtraAllt.cs</Link>
     </Compile>
-    <Compile Include="..\..\..\..\Examples\PizzaProject\Generated\C#\pizza\special\LHCData.cs">
+    <Compile Include="..\..\..\..\Examples\OPSIdls\PizzaProject\Generated\C#\pizza\special\LHCData.cs">
       <Link>pizza\LHCData.cs</Link>
     </Compile>
-    <Compile Include="..\..\..\..\Examples\PizzaProject\Generated\C#\pizza\VessuvioData.cs">
+    <Compile Include="..\..\..\..\Examples\OPSIdls\PizzaProject\Generated\C#\pizza\VessuvioData.cs">
       <Link>pizza\VessuvioData.cs</Link>
     </Compile>
     <Compile Include="..\..\..\ops\AckData.cs">

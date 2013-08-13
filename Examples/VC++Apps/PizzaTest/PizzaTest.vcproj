@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;D:\OPS\OPS4\Examples\PizzaProject\Generated\C++&quot;;D:\OPS\OPS4\Cpp\include;&quot;C:\proj\SDSTest\OPSData\SDSIDL\Generated\C++&quot;"
+				AdditionalIncludeDirectories="&quot;D:\OPS\OPS4\Examples\OPSIdls\PizzaProject\Generated\C++&quot;;D:\OPS\OPS4\Cpp\include;&quot;C:\proj\SDSTest\OPSData\SDSIDL\Generated\C++&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -117,9 +117,9 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;D:\OPS\OPS4\Examples\PizzaProject\Generated\C++&quot;;D:\OPS\OPS4\Cpp\include"
+				AdditionalIncludeDirectories="&quot;D:\OPS\OPS4\Examples\OPSIdls\PizzaProject\Generated\C++&quot;;D:\OPS\OPS4\Cpp\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -136,6 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="OPSCppLib_vc90_MT.lib  winmm.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="D:\OPS\OPS4\Cpp\lib;&quot;C:\Program Files (x86)\boost\boost_1_38\lib&quot;"
 				GenerateDebugInformation="true"
@@ -215,46 +216,6 @@
 		<Filter
 			Name="pizza"
 			>
-			<File
-				RelativePath="..\..\PizzaProject\Generated\C++\pizza\CapricosaData.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\PizzaProject\Generated\C++\pizza\CapricosaDataPublisher.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\PizzaProject\Generated\C++\pizza\CapricosaDataSubscriber.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\PizzaProject\Generated\C++\pizza\PizzaData.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\PizzaProject\Generated\C++\pizza\PizzaDataPublisher.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\PizzaProject\Generated\C++\pizza\PizzaDataSubscriber.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\PizzaProject\Generated\C++\PizzaProject\PizzaProjectTypeFactory.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\PizzaProject\Generated\C++\pizza\VessuvioData.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\PizzaProject\Generated\C++\pizza\VessuvioDataPublisher.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\PizzaProject\Generated\C++\pizza\VessuvioDataSubscriber.h"
-				>
-			</File>
 		</Filter>
 		<File
 			RelativePath=".\ReadMe.txt"

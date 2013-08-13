@@ -5,20 +5,24 @@
 #include "stdafx.h"
 #include <windows.h>
 #include <conio.h>
+#include <process.h>
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <sstream>
-#include <process.h>
 
 #include <ops.h>
+
 #include "pizza/PizzaData.h"
 #include "pizza/PizzaDataSubscriber.h"
 #include "pizza/PizzaDataPublisher.h"
 #include "pizza/VessuvioData.h"
 #include "pizza/VessuvioDataSubscriber.h"
 #include "pizza/VessuvioDataPublisher.h"
+#include "pizza/special/ExtraAllt.h"
+#include "pizza/special/ExtraAlltSubscriber.h"
+#include "pizza/special/ExtraAlltPublisher.h"
 
 #include "PizzaProject/PizzaProjectTypeFactory.h"
 
@@ -91,6 +95,7 @@ public:
 	virtual void StartSubscriber() = 0;
 	virtual void StopSubscriber() = 0;
 	virtual void SetDeadlineQos(__int64 timeoutMs) = 0;
+	virtual ~IHelper() {};
 };
 
 template <class DataType, class DataTypePublisher, class DataTypeSubscriber>
@@ -111,7 +116,7 @@ public:
 		this->client = client;
 	}
 
-	~CHelper()
+	virtual ~CHelper()
 	{
 		DeletePublisher(false);
 		DeleteSubscriber(false);
@@ -269,6 +274,7 @@ public:
 			// Check if we have lost any messages. We use the publicationID and that works as long as
 			// it is the same publisher sending us messages.
 			ops::OPSMessage* newMess = sub->getMessage();
+			
 			if (expectedPubId >= 0) {
 				if (expectedPubId != newMess->getPublicationID()) {
 					std::cout << ">>>>> Lost message for topic " << sub->getTopic().getName() << 
@@ -290,6 +296,7 @@ public:
 
 typedef CHelper<pizza::PizzaData, pizza::PizzaDataPublisher, pizza::PizzaDataSubscriber> TPizzaHelper;
 typedef CHelper<pizza::VessuvioData, pizza::VessuvioDataPublisher, pizza::VessuvioDataSubscriber> TVessuvioHelper;
+typedef CHelper<pizza::special::ExtraAllt, pizza::special::ExtraAlltPublisher, pizza::special::ExtraAlltSubscriber> TExtraAlltHelper;
 
 struct ItemInfo {
 	std::string Domain;
@@ -311,27 +318,62 @@ struct ItemInfo {
 	};
 };
 std::vector<ItemInfo*> ItemInfoList;
+
+static bool beQuite = false;
 	
 
-class MyListener : public CHelperListener<pizza::PizzaData>, public CHelperListener<pizza::VessuvioData>
+class MyListener : 
+	public CHelperListener<pizza::PizzaData>, 
+	public CHelperListener<pizza::VessuvioData>,
+	public CHelperListener<pizza::special::ExtraAllt>
 {
 public:
 	void onData(ops::Subscriber* sub, pizza::PizzaData* data)
     {
-		std::cout << 
-			"[Topic: " << sub->getTopic().getName() << 
-			"] Pizza:: Cheese: " << data->cheese << 
-			",  Tomato sauce: " + data->tomatoSauce << std::endl;
-    }
+		std::string addr = "";
+		int port = 0;
+		sub->getMessage()->getSource(addr, port);
+
+		if (!beQuite) {
+			std::cout << 
+				"[Topic: " << sub->getTopic().getName() << 
+				"] (From " << addr << ":" << port <<
+				") Pizza:: Cheese: " << data->cheese << 
+				",  Tomato sauce: " << data->tomatoSauce << std::endl;
+		}
+	}
 
 	void onData(ops::Subscriber* sub, pizza::VessuvioData* data)
     {
-		std::cout << 
-			"[Topic: " << sub->getTopic().getName() << 
-			"] Vessuvio:: Cheese: " << data->cheese << 
-			",  Tomato sauce: " << data->tomatoSauce << 
-			", Ham length: " << data->ham.size() << std::endl;
-    }
+		std::string addr = "";
+		int port = 0;
+		sub->getMessage()->getSource(addr, port);
+
+		if (!beQuite) {
+			std::cout << 
+				"[Topic: " << sub->getTopic().getName() << 
+				"] (From " << addr << ":" << port <<
+				") Vessuvio:: Cheese: " << data->cheese << 
+				",  Tomato sauce: " << data->tomatoSauce << 
+				", Ham length: " << data->ham.size() << std::endl;
+		}
+	}
+
+	void onData(ops::Subscriber* sub, pizza::special::ExtraAllt* data)
+    {
+		std::string addr = "";
+		int port = 0;
+		sub->getMessage()->getSource(addr, port);
+
+		if (!beQuite) {
+			std::cout << 
+				"[Topic: " << sub->getTopic().getName() << 
+				"] (From " << addr << ":" << port <<
+				") Pizza:: Cheese: " << data->cheese << 
+				",  Tomato sauce: " << data->tomatoSauce << 
+				", Num strings: " << data->strings.size() << std::endl;
+		}
+	}
 };
 
 static int NumVessuvioBytes = 0;
@@ -346,7 +388,7 @@ void WriteToAllSelected()
 		ItemInfo* info = ItemInfoList[i];
 		if (!info->selected) continue;
 		std::stringstream str;
-		str << Counter << std::ends;
+		str << Counter;
 		std::string CounterStr(str.str());
 		Counter++;
 		if (info->TypeName == pizza::PizzaData::getTypeName()) {
@@ -360,6 +402,16 @@ void WriteToAllSelected()
 			TVessuvioHelper* hlp = (TVessuvioHelper*)info->helper;
 			hlp->data.cheese = "Vessuvio from C++: " + CounterStr;
 			hlp->data.ham = FillerStr;
+#ifdef USE_MESSAGE_HEADER
+			hlp->data.systemTime = sds::sdsSystemTime();
+#endif
+		}
+		if (info->TypeName == pizza::special::ExtraAllt::getTypeName()) {
+			TExtraAlltHelper* hlp = (TExtraAlltHelper*)info->helper;
+			hlp->data.cheese = "ExtraAllt from C++: " + CounterStr;
+			if (hlp->data.strings.size() == 0) {
+				for (int k = 0; k < 1000; k++) hlp->data.strings.push_back("hej");
+			}
 #ifdef USE_MESSAGE_HEADER
 			hlp->data.systemTime = sds::sdsSystemTime();
 #endif
@@ -396,6 +448,7 @@ void menu()
 	std::cout << "\t V ms  Set send period [ms] [" << sendPeriod << "]" << std::endl;
 	std::cout << "\t A     Start/Stop periodical Write with set period" << std::endl;
 	std::cout << "\t W     Write data" << std::endl;
+	std::cout << "\t Q     Quite (minimize program output)" << std::endl;
 	std::cout << "\t X     Exit program" << std::endl;
 }
 
@@ -439,19 +492,29 @@ int main(int argc, char**argv)
 	ItemInfoList.push_back(new ItemInfo("OtherPizzaDomain", "OtherPizzaTopic", "pizza.PizzaData"));
 	ItemInfoList.push_back(new ItemInfo("OtherPizzaDomain", "OtherVessuvioTopic", "pizza.VessuvioData"));
 
+	ItemInfoList.push_back(new ItemInfo("PizzaDomain", "ExtraAlltTopic", "pizza.special.ExtraAllt"));
+
+	// Setup the OPS static error service (common for all participants, reports errors during participant creation)
+	ops::ErrorWriter* errorWriterStatic = new ops::ErrorWriter(std::cout);
+	ops::Participant::getStaticErrorService()->addListener(errorWriterStatic);
+
 	// Create participants
 	// NOTE that the second parameter (participantID) must be different for the two participant instances
 	ops::Participant* participant = ops::Participant::getInstance("PizzaDomain", "PizzaDomain");
-        if (participant == NULL) {
-            std::cout << "Failed to create Participant. Missing ops_config.xml ??" << std::endl;
-            exit(-1);
-        }
+    if (participant == NULL) {
+	    std::cout << "Failed to create Participant. Missing ops_config.xml ??" << std::endl;
+		exit(-1);
+    }
 	participant->addTypeSupport(new PizzaProject::PizzaProjectTypeFactory());
 	
 	ops::Participant* otherParticipant = ops::Participant::getInstance("OtherPizzaDomain", "OtherPizzaDomain");
+	if (otherParticipant == NULL) {
+		std::cout << "Failed to create Participant. Missing ops_config.xml ??" << std::endl;
+        exit(-1);
+	}
 	otherParticipant->addTypeSupport(new PizzaProject::PizzaProjectTypeFactory());
 
-	// Add error errorwriters to catch interna ops errors
+	// Add error writers to catch internal ops errors
 	ops::ErrorWriter* errorWriter = new ops::ErrorWriter(std::cout);
 	participant->getErrorService()->addListener(errorWriter);
 
@@ -469,6 +532,9 @@ int main(int argc, char**argv)
 		if (info->TypeName == pizza::VessuvioData::getTypeName()) {
 			info->helper = new TVessuvioHelper(&myListener);
 		}
+		if (info->TypeName == pizza::special::ExtraAllt::getTypeName()) {
+			info->helper = new TExtraAlltHelper(&myListener);
+		}
 
 		// Set participant
 		if (info->Domain == "PizzaDomain") {
@@ -480,7 +546,7 @@ int main(int argc, char**argv)
 	}
 
 	ItemInfo* ii = ItemInfoList[0]; 
-        ii->selected = true;
+	ii->selected = true;
 
 	bool doExit = false;
 	bool doPeriodicSend = false;
@@ -502,11 +568,7 @@ int main(int argc, char**argv)
 					// Calc next time to send
 					nextSendTime = now + sendPeriod;
 				}
-#ifdef _WIN32
-				Sleep(1);			
-#else
-                                usleep(1000);
-#endif
+				ops::TimeHelper::sleep(1);			
 			}
 		}
 
@@ -651,6 +713,11 @@ int main(int argc, char**argv)
 					if (num >= 0) sendPeriod = num;
 					std::cout << "sendPeriod: " << sendPeriod << std::endl;
 				}
+				break;
+
+			case 'q':
+			case 'Q':
+				beQuite = !beQuite;
 				break;
 
 			case 'w':
