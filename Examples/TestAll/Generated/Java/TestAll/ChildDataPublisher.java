@@ -8,7 +8,7 @@ import ops.Topic;
 
 public class ChildDataPublisher extends Publisher 
 {
-    public ChildDataPublisher(Topic<ChildData> t) throws ops.ConfigurationException
+    public ChildDataPublisher(Topic<ChildData> t)
     {
         super(t);
     }

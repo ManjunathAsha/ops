@@ -8,7 +8,7 @@ import ops.Topic;
 
 public class TestDataPublisher extends Publisher 
 {
-    public TestDataPublisher(Topic<TestData> t) throws ops.ConfigurationException
+    public TestDataPublisher(Topic<TestData> t)
     {
         super(t);
     }

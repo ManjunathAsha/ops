@@ -10,7 +10,7 @@ import ops.OPSTopicTypeMissmatchException;
 
 public class ChildDataSubscriber extends Subscriber 
 {
-    public ChildDataSubscriber(Topic<ChildData> t) throws ops.ConfigurationException
+    public ChildDataSubscriber(Topic<ChildData> t) //throws ops.OPSTopicTypeMissmatchException
     {
         super(t);
 
