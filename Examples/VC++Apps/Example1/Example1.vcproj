@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;D:\OPS\OPS4\Examples\TestAll\Generated\C++&quot;;D:\OPS\OPS4\Cpp\include"
+				AdditionalIncludeDirectories="&quot;D:\OPS\OPS4\Examples\OPSIdls\TestAll\Generated\C++&quot;;D:\OPS\OPS4\Cpp\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -190,10 +190,6 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
-		<File
-			RelativePath=".\ReadMe.txt"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
