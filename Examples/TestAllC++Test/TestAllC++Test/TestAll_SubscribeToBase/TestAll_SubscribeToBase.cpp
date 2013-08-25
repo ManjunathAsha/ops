@@ -1,5 +1,6 @@
 // TestAll_Subscribe.cpp : Defines the entry point for the console application.
 //
+#include <windows.h>
 #include <ops.h>
 #include "TestAll/ChildDataSubscriber.h"
 #include "TestAll/BaseDataSubscriber.h"
@@ -29,15 +30,16 @@ class Main : ops::DataListener, ops::DeadlineMissedListener
 public:
 	ops::Subscriber* baseSub;
 	TestAll::BaseDataPublisher* basePub;
+	DWORD counter;
 
 public:
-	Main()
+	Main(std::string configFile): counter(0)
 	{
 		using namespace TestAll;
 		using namespace ops;
 
 		//Create a topic from configuration.
-		ops::Participant* participant = Participant::getInstance("TestAllDomain");
+		ops::Participant* participant = Participant::getInstance("TestAllDomain", "TestAllDomain", configFile);
 		participant->addTypeSupport(new BaseTypeFactory());
 
 		ErrorWriter* errorWriter = new ErrorWriter(std::cout);
@@ -60,13 +62,15 @@ public:
 	///Override from ops::DataListener, called whenever new data arrives.
 	void onNewData(ops::DataNotifier* subscriber)
 	{
+		counter++;
+
 		/*TestAll::BaseData* data;
 		data = (TestAll::BaseData*)baseSub->getMessage()->getData();
 		if(data == NULL) return;
 		std::cout << data->baseText << " " << baseSub->getMessage()->getPublicationID() << " From: " << baseSub->getMessage()->getPublisherName() << std::endl;
 		data->setKey("relay");
 		basePub->write(data);*/
-		std::cout << "Data received!" << std::endl;
+		std::cout << "Data received! " << counter << std::endl;
 
 		//std::cout << ((ops::ParticipantInfoData*)baseSub->getMessage()->getData())->ips[0] << ":" <<((ops::ParticipantInfoData*)baseSub->getMessage()->getData())->mc_udp_port << std::endl;
 	
@@ -89,13 +93,16 @@ void newData()
 }
 
 //Application entry point
-int main(int argc, char* args)
+int main(int argc, char* args[])
 {
 	//Add support for our types from TestAll IDL project.
 	//ops::OPSObjectFactory::getInstance()->add(new TestAll::TestAllTypeFactory()); 
 
+	std::string configFile = "";
+	if (argc > 1) configFile = args[1];
+	
 	//Create an object that will listen to OPS events
-	Main m;
+	Main m(configFile);
 
 	//This is a way to create inline subscriber event handlers in c++
 	/*class DataCallback : ops::DataListener 

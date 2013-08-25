@@ -2,6 +2,8 @@
 //
 
 #include <Windows.h>
+#include <math.h>
+#include <conio.h>
 
 #include "TestAll/ChildDataPublisher.h"
 #include "TestAll/BaseDataPublisher.h"
@@ -18,17 +20,17 @@
 
 int main(int argc, const char* args[])
 {
-	int mainSleep = 5000;
+	int mainSleep = 40;
 	int nrOfFloats = 500;
 	int sleepEveryNrPackets = 100000;
 	int sendSleepTime = 1;
 
 	if(argc > 3)
 	{
-		sscanf(args[1],"%i", &mainSleep);
-		sscanf(args[2],"%i", &nrOfFloats);
-		sscanf(args[3],"%i", &sleepEveryNrPackets);
-		sscanf(args[4],"%i", &sendSleepTime);
+		sscanf_s(args[1],"%i", &mainSleep);
+		sscanf_s(args[2],"%i", &nrOfFloats);
+		sscanf_s(args[3],"%i", &sleepEveryNrPackets);
+		sscanf_s(args[4],"%i", &sendSleepTime);
 	}
 	else
 	{
@@ -36,7 +38,6 @@ int main(int argc, const char* args[])
 
 	}
 
-	
 	
 	timeBeginPeriod(1);
 	using namespace TestAll;
@@ -54,20 +55,13 @@ int main(int argc, const char* args[])
 
 	/*Sleep(2000);
 	ops::Sender* tcpServer = ops::Sender::createTCPServer("", 1342, participant->getIOService());
-	
-
-	
-	
 
 	while(true)
 	{
-		
 		Sleep(10);
 		tcpServer->sendTo("Hello World!", 13, "", 0);
-		
 	}
 	return 1;*/
-
 
 
 	//Create topic, might throw ops::NoSuchTopicException
@@ -86,10 +80,17 @@ int main(int argc, const char* args[])
 	pub.sendSleepTime = sendSleepTime;
 	pub.sleepEverySendPacket = sleepEveryNrPackets;
 
+
+
+
 	Topic baseTopic = participant->createTopic("BaseTopic");
 
 	BaseDataPublisher basePub(baseTopic);
 	basePub.setName("BasePublisher");
+
+
+
+
 
 	//Create some data to publish
 	ChildData data;
@@ -111,9 +112,9 @@ int main(int argc, const char* args[])
 	//
 	//Set primitives
 	data.bo = true;
-	data.b = 1;
+	data.b = 3;
 	data.i = 0;
-	data.l = 3;
+	data.l = -3;
 	data.f = 4.0;
 	data.d = 5.0;
 	//data.s = "World";
@@ -123,7 +124,7 @@ int main(int argc, const char* args[])
 	data.bos.push_back(true);
 	data.bs.push_back(6);
 	//data.is.push_back(7);
-	data.ls.push_back(8);
+	data.ls.push_back(-8);
 	//data.fs.push_back(9.0);
 	data.ds.push_back(10.0);
 	data.ss.push_back("Hello Array");
@@ -131,10 +132,10 @@ int main(int argc, const char* args[])
 
 	//return 0;
 
-	for(int i = 0; i < nrOfFloats; i++)
-	{
-		data.fs.push_back(i);
-	}
+	//for(int i = 0; i < nrOfFloats; i++)
+	//{
+	//	data.fs.push_back((float)i);
+	//}
 
 	
 	/*TestData testData2;
@@ -174,21 +175,67 @@ int main(int argc, const char* args[])
 
 	ChildData* dataClone = (ChildData*)data.clone();
 
+	double theta = 0.0;
+	double pi = 3.1415926535;
+	double fact = 1.0;
+	double dist = 0.1;
+	double offset = 0.0;
+
 	//Publish the data peridically and make a small changes to the data.
 	while(true)
 	{
-		std::cout << "Writing " << dataClone->i <<  std::endl;
-		pub.write(dataClone);
+		//std::cout << "Writing ChildTopic " << dataClone->i <<  std::endl;
 		
 		dataClone->i++;
 
-		if(dataClone->i % 20 == 0)
+		dataClone->d = (20/fact * sin(theta * pi / 180.0)) + (fact * sin(3 * theta * pi / 180.0));
+		dataClone->f = (30/fact * cos(theta * pi / 180.0)) + (fact * cos(3 * theta * pi / 180.0));
+		theta++;
+
+		dataClone->fs.clear();
+		dataClone->ds.clear();
+		for (float v = 0; v < 600; v++)
+		{
+			dataClone->fs.push_back(offset + (fact * sin(v * pi / 180.0)));
+			dataClone->ds.push_back(-offset + (fact * cos(v * pi / 180.0)));
+		}
+
+		pub.write(dataClone);
+
+		if(dataClone->i % 10 == 0)
 		{
 			basePub.write(&baseData);
+		//	std::cout << "Writing BaseTopic " << std::endl;
 		}
 
 		Sleep(mainSleep);
-		
+
+		if (_kbhit()) {
+			char ch = _getch();
+			if (ch == '+') {
+				if (fact >= (15.0 * dist)) dist = 10.0 * dist; 
+				fact = fact + dist;
+			}
+			if (ch == '-') {
+				if (fact <= 1.5 * dist) dist = dist / 10.0;
+				fact = fact - dist;
+			}
+			if (fact < dist) fact = dist;
+			if (ch == '0') {
+				offset = 0.0;
+			}
+			if (ch == '1') {
+				offset = 10.0;
+			}
+			if (ch == '2') {
+				offset = -10.0;
+			}
+			if (ch == 'a') {
+				dataClone->ls.push_back(8);
+				dataClone->ls.resize(20000);	
+			}
+		}
+		std::cout << "offset = " << offset << ", fact = " << fact << ", dist = " << dist << std::endl;
 	}
 
 	timeEndPeriod(1);

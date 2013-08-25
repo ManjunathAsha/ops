@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include "Receiver.h"
+#include "windows.h"
 
 //Create a class to act as a listener for OPS data and deadlines
 class Main : ops::DataListener, ops::DeadlineMissedListener, ops::Listener<ops::BytesSizePair>
@@ -16,6 +17,7 @@ public:
 	TestAll::ChildDataSubscriber* sub;
 	TestAll::BaseDataSubscriber* baseSub;
 	TestAll::ChildData data;
+	ops::Subscriber* piSub;
 
 	std::vector<ops::OPSMessage*> inCommingMessages;
 
@@ -30,15 +32,14 @@ public:
 	{
 		rec->asynchWait(bytes, 100);
 	}
-	Main(): 
+	Main(bool piSubscriber): 
 	  packagesLost(0), 
-	  lastPacket(-1)
+	  lastPacket(-1),
+	  sub(NULL), baseSub(NULL), piSub(NULL), rec(NULL)
 	{
 		using namespace TestAll;
 		using namespace ops;
 
-
-		
 
 		//Create a topic. NOTE, this is a temporary solution to get topics before OPS4 is completely released.
 		//ops::Topic<ChildData> topic("ChildTopic", 6778, "testall.ChildData", "236.7.8.44");
@@ -58,27 +59,35 @@ public:
 		ErrorWriter* errorWriter = new ErrorWriter(std::cout);
 		participant->addListener(errorWriter);
 
-		Topic topic = participant->createTopic("ChildTopic");
+		if (!piSubscriber) {
+			Topic topic = participant->createTopic("ChildTopic");
 
-		//Create a subscriber on that topic.
-		sub = new ChildDataSubscriber(topic);
-		//sub->setDeadlineQoS(10);
-		//sub->setTimeBasedFilterQoS(1000);
-		//sub->addFilterQoSPolicy(new KeyFilterQoSPolicy("key1"));
-		sub->addDataListener(this);
-		sub->deadlineMissedEvent.addDeadlineMissedListener(this);
-		//sub->setHistoryMaxSize(5);
-		sub->start();
+			//Create a subscriber on that topic.
+			sub = new ChildDataSubscriber(topic);
+			//sub->setDeadlineQoS(10);
+			//sub->setTimeBasedFilterQoS(1000);
+			//sub->addFilterQoSPolicy(new KeyFilterQoSPolicy("key1"));
+			sub->addDataListener(this);
+			sub->deadlineMissedEvent.addDeadlineMissedListener(this);
+			//sub->setHistoryMaxSize(5);
+			sub->start();
 
-		//I godtycklig component
-		Topic baseTopic = participant->createTopic("BaseTopic");
+			//I godtycklig component
+			Topic baseTopic = participant->createTopic("BaseTopic");
 
-		//Create a subscriber on that topic.
-		baseSub = new BaseDataSubscriber(baseTopic);
-		baseSub->setDeadlineQoS(10000);		
-		baseSub->addDataListener(this);
-		baseSub->deadlineMissedEvent.addDeadlineMissedListener(this);
-		baseSub->start();
+			//Create a subscriber on that topic.
+			baseSub = new BaseDataSubscriber(baseTopic);
+			baseSub->setDeadlineQoS(22000);		
+			baseSub->addDataListener(this);
+			baseSub->deadlineMissedEvent.addDeadlineMissedListener(this);
+			baseSub->start();
+
+		} else {
+			Topic piTopic = participant->createParticipantInfoTopic();
+			piSub = new ops::Subscriber(piTopic);
+			piSub->addDataListener(this);
+			piSub->start();
+		}
 
 		//while(true)
 		//{
@@ -97,8 +106,12 @@ public:
 			
 			sub->numReservedMessages();
 
-			sub->getData(&data);
-	
+///LA test
+			sub->getData(&data);   
+//			ops::OPSMessage* newMess = sub->getMessage();
+//			data = *(TestAll::ChildData*)newMess->getData();
+///LA
+
 			//std::cout << data.i << " From: " << sub->getMessage()->getPublisherName() << std::endl;
 
 
@@ -140,16 +153,51 @@ public:
 				packagesLost++;
 			}
 			lastPacket = data.i;
-			std::cout << data.baseText << " "  << " " << sub->getMessage()->getPublicationID() << " From: " << sub->getMessage()->getPublisherName() << ". Lost messages: " << packagesLost << "          \r";// << std::endl;
+			std::cout << data.baseText << " "  << " " << sub->getMessage()->getPublicationID() 
+				<< " From: " << sub->getMessage()->getPublisherName() 
+				<< ". Lost messages: " << packagesLost << "          \r";// << std::endl;
 		
 		}
-		else
+		else if (subscriber == baseSub)
 		{
 			//Sleep(100000);
 			TestAll::BaseData* data;
 			data = (TestAll::BaseData*)baseSub->getMessage()->getData();
 			if(data == NULL) return;
-			std::cout << data->baseText << " " << baseSub->getMessage()->getPublicationID() << " From: " << baseSub->getMessage()->getPublisherName() << std::endl;
+			std::cout << std::endl << data->baseText << " " << baseSub->getMessage()->getPublicationID() << " From: " << baseSub->getMessage()->getPublisherName() << std::endl;
+		}
+		else if (subscriber == piSub) 
+		{
+			ops::ParticipantInfoData* data = (ops::ParticipantInfoData*)piSub->getMessage()->getData();
+			if (data == NULL) return;
+			//std::string name;
+			//std::string id;
+			//std::string domain;
+			//std::string ip;
+			std::cout << "name: " << data->name << ", id: " << data->id << ", domain: " << data->domain << ", ip: " << data->ip << std::endl;
+			//std::string languageImplementation;
+			//std::string opsVersion;
+			//int mc_udp_port;
+			//int mc_tcp_port;
+			std::cout << "  lang: " << data->languageImplementation << ", opsver: " << data->opsVersion << ", mcudp: " << data->mc_udp_port << ", mctcp: " << data->mc_tcp_port << std::endl;
+			//std::vector<TopicInfoData> subscribeTopics;
+			std::cout << "  subscr Topics: ";
+			for (unsigned int i = 0; i < data->subscribeTopics.size(); i++) {
+				std::cout << data->subscribeTopics[i].name << " ";
+			}
+			std::cout << std::endl;
+			//std::vector<TopicInfoData> publishTopics;
+			std::cout << "  pub Topics: ";
+			for (unsigned int i = 0; i < data->publishTopics.size(); i++) {
+				std::cout << data->publishTopics[i].name << " ";
+			}
+			std::cout << std::endl;
+			//std::vector<std::string> knownTypes;
+			std::cout << "  knownTypes: ";
+			for (unsigned int i = 0; i < data->knownTypes.size(); i++) {
+  				std::cout << data->knownTypes[i] << " ";
+			}
+			std::cout << std::endl;
 		}
 	}
 	///Override from ops::DeadlineMissedListener, called if no new data has arrived within deadlineQoS.
@@ -159,11 +207,12 @@ public:
 	}
 	~Main()
 	{
-		baseSub->stop();
-		delete baseSub;
-		sub->stop();
-		delete sub;
-		
+		if (baseSub) baseSub->stop();
+		if (baseSub) delete baseSub;
+		if (sub) sub->stop();
+		if (sub) delete sub;
+		if (piSub) piSub->stop();
+		if (piSub) delete piSub;
 	}
 
 };
@@ -173,9 +222,10 @@ int main(int argc, char* args)
 {
 	ops::Participant* participant = ops::Participant::getInstance("TestAllDomain");
 	
+	bool asPiSub = (argc > 1); 
 	
 	//Create an object that will listen to OPS events
-	Main* m = new Main();
+	Main* m = new Main(asPiSub);
 
 	//Make sure the OPS ioService never runs out of work.
 	//Run it on main application thread only.
