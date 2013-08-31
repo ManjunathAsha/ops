@@ -16,14 +16,6 @@ public class PizzaProjectTypeFactory implements SerializableFactory
 		{
 			return new pizza.VessuvioData();
 		}
-		if(type.equals("pizza.CapricosaData"))
-		{
-			return new pizza.CapricosaData();
-		}
-		if(type.equals("pizza.special.LHCData"))
-		{
-			return new pizza.special.LHCData();
-		}
 		if(type.equals("pizza.special.ExtraAllt"))
 		{
 			return new pizza.special.ExtraAllt();
@@ -31,6 +23,14 @@ public class PizzaProjectTypeFactory implements SerializableFactory
 		if(type.equals("pizza.special.Cheese"))
 		{
 			return new pizza.special.Cheese();
+		}
+		if(type.equals("pizza.special.LHCData"))
+		{
+			return new pizza.special.LHCData();
+		}
+		if(type.equals("pizza.CapricosaData"))
+		{
+			return new pizza.CapricosaData();
 		}
 		if(type.equals("pizza.PizzaData"))
 		{

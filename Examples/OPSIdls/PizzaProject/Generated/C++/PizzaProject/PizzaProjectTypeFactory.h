@@ -9,10 +9,10 @@
 #include <string>
 
 #include "pizza/VessuvioData.h"
-#include "pizza/CapricosaData.h"
-#include "pizza/special/LHCData.h"
 #include "pizza/special/ExtraAllt.h"
 #include "pizza/special/Cheese.h"
+#include "pizza/special/LHCData.h"
+#include "pizza/CapricosaData.h"
 #include "pizza/PizzaData.h"
 
 
@@ -28,14 +28,6 @@ public:
 		{
 			return new pizza::VessuvioData();
 		}
-		if(type == "pizza.CapricosaData")
-		{
-			return new pizza::CapricosaData();
-		}
-		if(type == "pizza.special.LHCData")
-		{
-			return new pizza::special::LHCData();
-		}
 		if(type == "pizza.special.ExtraAllt")
 		{
 			return new pizza::special::ExtraAllt();
@@ -43,6 +35,14 @@ public:
 		if(type == "pizza.special.Cheese")
 		{
 			return new pizza::special::Cheese();
+		}
+		if(type == "pizza.special.LHCData")
+		{
+			return new pizza::special::LHCData();
+		}
+		if(type == "pizza.CapricosaData")
+		{
+			return new pizza::CapricosaData();
 		}
 		if(type == "pizza.PizzaData")
 		{

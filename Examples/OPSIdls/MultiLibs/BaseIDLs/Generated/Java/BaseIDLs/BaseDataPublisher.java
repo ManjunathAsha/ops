@@ -8,7 +8,7 @@ import ops.Topic;
 
 public class BaseDataPublisher extends Publisher 
 {
-    public BaseDataPublisher(Topic<BaseData> t)
+    public BaseDataPublisher(Topic<BaseData> t) throws ops.ConfigurationException
     {
         super(t);
     }

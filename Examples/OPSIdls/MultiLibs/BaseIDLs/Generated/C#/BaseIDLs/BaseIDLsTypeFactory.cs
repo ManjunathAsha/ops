@@ -18,5 +18,16 @@ namespace BaseIDLs
 			return null;
 
         }
+
+        public string Create(object obj)
+        {
+			if (obj is BaseIDLs.BaseData)
+			{
+				return "BaseIDLs.BaseData";
+			}
+			return null;
+
+        }
+
     }
 }

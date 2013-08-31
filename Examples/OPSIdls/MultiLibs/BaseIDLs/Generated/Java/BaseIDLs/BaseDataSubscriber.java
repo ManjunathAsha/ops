@@ -10,7 +10,7 @@ import ops.OPSTopicTypeMissmatchException;
 
 public class BaseDataSubscriber extends Subscriber 
 {
-    public BaseDataSubscriber(Topic<BaseData> t) //throws ops.OPSTopicTypeMissmatchException
+    public BaseDataSubscriber(Topic<BaseData> t) throws ops.ConfigurationException
     {
         super(t);
 

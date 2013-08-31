@@ -18,5 +18,16 @@ namespace DerivedIDLs
 			return null;
 
         }
+
+        public string Create(object obj)
+        {
+			if (obj is DerivedIDLs.FooData)
+			{
+				return "DerivedIDLs.FooData";
+			}
+			return null;
+
+        }
+
     }
 }
