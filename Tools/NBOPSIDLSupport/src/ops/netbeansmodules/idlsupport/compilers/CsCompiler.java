@@ -39,7 +39,8 @@ public class CsCompiler extends AbstractTemplateBasedIDLCompiler//implements IDL
     Vector<IDLClass> idlClasses;
     private String projectDirectory;
     private static String BASE_CLASS_NAME_REGEX = "__baseClassName";
-    private static String CREATE_BODY_REGEX = "__createBody";
+    private static String CREATE_OBJECT_BODY_REGEX = "__createObjectBody";
+    private static String CREATE_STRING_BODY_REGEX = "__createStringBody";
 
     String createdFiles = "";
     private Vector<JarDependency> dllDependencies;
@@ -228,18 +229,26 @@ public class CsCompiler extends AbstractTemplateBasedIDLCompiler//implements IDL
 
         //Save the modified text to the output file.
 
-        String createBodyText = "";
+        String createObjectBodyText = "";
+        String createStringBodyText = "";
 
         for (IDLClass iDLClass : idlClasses)
         {
-            createBodyText += tab(3) + "if (type.Equals(\"" + iDLClass.getPackageName() + "." + iDLClass.getClassName() + "\"))" + endl();
-            createBodyText += tab(3) + "{" + endl();
-            createBodyText += tab(4) +      "return new " + iDLClass.getPackageName() + "." + iDLClass.getClassName() + "();" + endl();
-            createBodyText += tab(3) + "}" + endl();
-        }
-        createBodyText += tab(3) + "return null;" + endl();
+            createObjectBodyText += tab(3) + "if (type.Equals(\"" + iDLClass.getPackageName() + "." + iDLClass.getClassName() + "\"))" + endl();
+            createObjectBodyText += tab(3) + "{" + endl();
+            createObjectBodyText += tab(4) +      "return new " + iDLClass.getPackageName() + "." + iDLClass.getClassName() + "();" + endl();
+            createObjectBodyText += tab(3) + "}" + endl();
 
-        templateText = templateText.replace(CREATE_BODY_REGEX, createBodyText);
+            createStringBodyText += tab(3) + "if (obj is " + iDLClass.getPackageName() + "." + iDLClass.getClassName() + ")" + endl();
+            createStringBodyText += tab(3) + "{" + endl();
+            createStringBodyText += tab(4) +    "return \"" + iDLClass.getPackageName() + "." + iDLClass.getClassName() + "\";" + endl();
+            createStringBodyText += tab(3) + "}" + endl();
+        }
+        createObjectBodyText += tab(3) + "return null;" + endl();
+        createStringBodyText += tab(3) + "return null;" + endl();
+
+        templateText = templateText.replace(CREATE_OBJECT_BODY_REGEX, createObjectBodyText);
+        templateText = templateText.replace(CREATE_STRING_BODY_REGEX, createStringBodyText);
         saveOutputText(templateText);
 
         createdFiles += "\"" + getOutputFileName() + "\"\n";

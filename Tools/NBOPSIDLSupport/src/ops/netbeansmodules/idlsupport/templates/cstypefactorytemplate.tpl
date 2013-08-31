@@ -11,7 +11,13 @@ namespace __packageName
     {
         public ISerializable Create(string type)
         {
-__createBody
+__createObjectBody
         }
+
+        public string Create(object obj)
+        {
+__createStringBody
+        }
+
     }
 }
