@@ -7,6 +7,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -14,7 +15,8 @@ namespace Ops
 {
 	public class XMLArchiverOut : IArchiverInOut 
     {
-		private int currentTabDepth = 0;
+        private NumberFormatInfo numberFormatInfo = new NumberFormatInfo() { NumberDecimalSeparator = "." };
+        private int currentTabDepth = 0;
 		private static string HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?>" + LINE_CHANGE;
 		private static string LINE_CHANGE = "\n";
 		internal BinaryWriter bw = null;
@@ -32,6 +34,7 @@ namespace Ops
 		private static string TYPE_ADD_STRING = " type = \"string\" ";
 		private bool writeXMLHeader = true;
 		private bool writType = true;
+        private SerializableCompositeFactory compositeFactory = new SerializableCompositeFactory();
 
         public XMLArchiverOut()
         {
@@ -63,6 +66,11 @@ namespace Ops
                 bw.Write(encoding.GetBytes(HEADER));
             }
 
+        }
+
+        public bool IsOut()
+        {
+            return true;
         }
 
         public void SetBinaryWriter(BinaryWriter bw)
@@ -101,13 +109,19 @@ namespace Ops
         public void Put(string name, float v) 
         {
            string typeAdd = writType ? TYPE_ADD_FLOAT : "";
-            PutXMLLeaf(name, "" + v, typeAdd); 
+
+           // A specified NumberFormatInfo ensures that values, regardless of regional format settings in Windows, 
+           // always are written with "." as decimal separator
+           PutXMLLeaf(name, "" + v.ToString(numberFormatInfo), typeAdd);  
         }
 
         public void Put(string name, double v) 
         {
             string typeAdd = writType ? TYPE_ADD_DOUBLE : "";
-            PutXMLLeaf(name, "" + v, typeAdd); 
+
+            // A specified NumberFormatInfo ensures that values, regardless of regional format settings in Windows, 
+            // always are written with "." as decimal separator
+            PutXMLLeaf(name, "" + v.ToString(numberFormatInfo), typeAdd);
         }
 
         public void Put(string name, string v) 
@@ -316,8 +330,15 @@ namespace Ops
 
         public ISerializable Inout(string name, ISerializable v) 
         {
-            string typeAdd = TYPE_ADD_CLASS + "\"" + v.GetType().Name + "\"";
-            string nodeString = Tab(currentTabDepth) + "<" + name + typeAdd +">" + LINE_CHANGE;
+            string typeName = compositeFactory.Create(v);
+
+            if (typeName == null)
+            {
+                typeName = v.GetType().Name;
+            }
+
+            string typeAdd = TYPE_ADD_CLASS + "\"" + typeName + "\"";
+            string nodeString = Tab(currentTabDepth) + "<" + name + typeAdd + ">" + LINE_CHANGE;
             bw.Write(encoding.GetBytes(nodeString));
             currentTabDepth++;
             v.Serialize(this);
@@ -384,6 +405,16 @@ namespace Ops
             throw new System.NotSupportedException("Not supported yet.");
         }
 
+        public void Remove(ISerializableFactory item)
+        {
+            compositeFactory.Remove(item);
+        }
+
+        public void Add(ISerializableFactory item)
+        {
+            compositeFactory.Add(item);
+        }
+
         // NB! we assume that the object is a List<X> where X implements ISerializable.
         public IList InoutSerializableList(string name, IList v)
         {
@@ -407,6 +438,6 @@ namespace Ops
         {
             return InoutSerializableList(name, v);
         }
-	}
+    }
 
 }

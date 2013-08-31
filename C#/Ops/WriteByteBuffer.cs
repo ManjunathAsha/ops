@@ -23,19 +23,35 @@ namespace Ops
 		internal static readonly byte protocolVersionLow = 5;
 		private readonly int segmentSize;
 
-
-        public WriteByteBuffer(byte[] buf, int segmentSize)
+        /// <summary>
+        /// Class used for serializing different types into a byte stream.
+        /// The format used is one or more segments, each with a segment header followed by data.
+        /// In OPS each segment will be sent as a separate message. 
+        /// 
+        /// By setting skipLeadingSegmentHeader to true, this class can be used for general serializing.
+        /// </summary>
+        /// <param name="buf">Byte buffer to write data to</param>
+        /// <param name="segmentSize">Size of each segment in buffer</param>
+        /// <param name="skipLeadingSegmentHeader">Tells if the leading segment header should be skipped or not (default = false).</param>
+        public WriteByteBuffer(byte[] buf, int segmentSize, bool skipLeadingSegmentHeader = false)
         {
             this.bw = new BinaryWriter(new MemoryStream(buf));
 
             this.segmentSize = segmentSize;
-            this.nextSegmentAt = 0;
+            if (skipLeadingSegmentHeader)
+            {
+                this.nextSegmentAt = segmentSize;
+            }
+            else
+            {
+                this.nextSegmentAt = 0;
+            }
             this.currentSegment = 0;
         }
 
 		/// <summary>
 		/// This method must be called to finish byte buffers consisting of more than one
-		/// segment. It will fill in the corrcect nrOfSegments in all segments.
+		/// segment. It will fill in the correct nrOfSegments in all segments.
 		/// </summary>
 		public void Finish()
         {

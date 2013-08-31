@@ -9,9 +9,9 @@ namespace Ops
 {
 	public interface ISerializableFactory 
     {
-		/// 
-		/// <param name="type"></param>
-		ISerializable Create(string type);
-	}
+        ISerializable Create(string type);
+
+        string Create(object obj);
+    }
 
 }

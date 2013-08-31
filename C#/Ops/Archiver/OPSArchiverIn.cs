@@ -24,6 +24,11 @@ namespace Ops
             readBuf = buf;
 		}
 
+        public bool IsOut()
+        {
+            return false;
+        }
+
 		/// 
 		/// <param name="e"></param>
 		public void Add(ISerializableFactory item)
@@ -95,10 +100,10 @@ namespace Ops
             return readBuf.ReadDouble();
         }
 
-		/// 
-		/// <param name="name"></param>
-		/// <param name="v"></param>
-		public ISerializable Inout(string name, ISerializable v)
+        /// 
+        /// <param name="name"></param>
+        /// <param name="v"></param>
+        public ISerializable Inout(string name, ISerializable v)
         {
             string type = readBuf.ReadString();
             ISerializable newSer = compositeFactory.Create(type);

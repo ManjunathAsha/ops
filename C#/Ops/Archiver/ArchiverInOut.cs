@@ -12,6 +12,12 @@ namespace Ops
 {
 	public interface IArchiverInOut 
     {
+        /// <summary>
+        /// Returns true if archiver serializes objects. Returns false if archiver deserialize byte streams.
+        /// </summary>
+        /// <returns></returns>
+        bool IsOut();  
+
 		/// 
 		/// <param name="name"></param>
 		/// <param name="v"></param>

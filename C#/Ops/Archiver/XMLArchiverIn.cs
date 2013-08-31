@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Xml;
 
@@ -15,9 +16,11 @@ namespace Ops
 {
 	public class XMLArchiverIn : IArchiverInOut 
     {
+        private const NumberStyles numberStyles = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite;
+        private NumberFormatInfo numberFormatInfo = new NumberFormatInfo() { NumberDecimalSeparator = "." };
 		private XmlNode currentNode;
         private XmlDocument doc = new XmlDocument();
-		private SerializableCompositeFactory factory = new SerializableCompositeFactory();
+		private SerializableCompositeFactory compositeFactory = new SerializableCompositeFactory();
 		private Stack<XmlNode> nodeStack = new Stack<XmlNode>();
 
         public XMLArchiverIn(Stream s)
@@ -65,6 +68,11 @@ namespace Ops
              {
                 // Finalize here.
              }
+        }
+
+        public bool IsOut()
+        {
+            return false;
         }
 
         public int GetNrElements(string name)
@@ -173,7 +181,10 @@ namespace Ops
         public double Inout(string name, double v)
         {
             double ret;
-            if (double.TryParse(GetValue(name), out ret))
+
+            // A specified NumberFormatInfo ensures that values, regardless of regional format settings in Windows, 
+            // always are read with "." as decimal separator
+            if (double.TryParse(GetValue(name), numberStyles, numberFormatInfo, out ret))
             {
                 return ret;
             }
@@ -187,7 +198,10 @@ namespace Ops
         public float Inout(string name, float v)
         {
             float ret;
-            if (float.TryParse(GetValue(name), out ret))
+
+            // A specified NumberFormatInfo ensures that values, regardless of regional format settings in Windows, 
+            // always are read with "." as decimal separator
+            if (float.TryParse(GetValue(name), numberStyles, numberFormatInfo, out ret))
             {
                 return ret;
             }
@@ -256,7 +270,7 @@ namespace Ops
             nodeStack.Push(currentNode);
             currentNode = GetNode(name);
             string type = currentNode.Attributes.GetNamedItem("type").Value;
-            ISerializable newElem = factory.Create(type);
+            ISerializable newElem = compositeFactory.Create(type);
             newElem.Serialize(this);
             currentNode = nodeStack.Pop();
             return newElem;
@@ -272,7 +286,7 @@ namespace Ops
                 currentNode = GetCurrentElement(i);
                 string type = currentNode.Attributes.GetNamedItem("type").Value;
 
-                ISerializable newElem = factory.Create(type);
+                ISerializable newElem = compositeFactory.Create(type);
 
                 newElem.Serialize(this);
 
@@ -289,12 +303,12 @@ namespace Ops
 
         public void Remove(ISerializableFactory item)
         {
-            factory.Remove(item);
+            compositeFactory.Remove(item);
         }
 
         public void Add(ISerializableFactory item)
         {
-            factory.Add(item);
+            compositeFactory.Add(item);
         }
 
         public List<int> InoutIntegerList(string name, List<int> v)

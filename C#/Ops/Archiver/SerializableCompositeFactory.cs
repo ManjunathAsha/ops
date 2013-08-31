@@ -38,7 +38,25 @@ namespace Ops
             return obj;
         }
 
-		/// 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public virtual string Create(object obj)
+        {
+            foreach (ISerializableFactory inOutableFactory in childFactories)
+            {
+                string str = inOutableFactory.Create(obj);
+                if (str != null)
+                {
+                    return str;
+                }
+            }
+            return null;
+        }
+
+        /// 
 		/// <param name="o"></param>
         public void Remove(ISerializableFactory item)
         {

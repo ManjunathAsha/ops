@@ -19,6 +19,11 @@ namespace Ops
             this.writeBuf = buf;
         }
 
+        public bool IsOut()
+        {
+            return true;
+        }
+
 		/// 
 		/// <param name="name"></param>
 		/// <param name="v"></param>

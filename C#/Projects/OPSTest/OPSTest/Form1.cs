@@ -613,6 +613,17 @@ namespace OPSTest
                 }
             }
         }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            byte[] b = new byte[8192];
+            WriteByteBuffer buf = new WriteByteBuffer(b, 8192, true);
+
+            int i = 127;
+            buf.Write(i);
+
+            buf.Write(i);
+        }
     }
 
 

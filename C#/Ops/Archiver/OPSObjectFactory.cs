@@ -26,10 +26,13 @@ namespace Ops
             {
                 return new Domain();
             }
+
+            // Usage of "MulticastDomain" is deprecated. We must keep this for backward compatibility though.
             if (type.Equals("MulticastDomain"))
             {
                 return new Domain();
             }
+
             if (type.Equals("Topic"))
             {
                 return new Topic();
@@ -41,6 +44,34 @@ namespace Ops
             return null;
         }
 
+        public string Create(object obj)
+        {
+            if (obj is OPSMessage)
+            {
+                return "ops.protocol.OPSMessage";
+            }
+            if (obj is DefaultOPSConfigImpl)
+            {
+                return "DefaultOPSConfigImpl";
+            }
+            if (obj is Domain)
+            {
+                return "Domain";
+            }
+            //if (obj is MulticastDomain)
+            //{
+            //    return "Domain";
+            //}
+            if (obj is Topic)
+            {
+                return "Topic";
+            }
+            if (obj is ParticipantInfoData)
+            {
+                return "ops.ParticipantInfoData";
+            }
+            return null;
+        }
     }
 
 	public class OPSObjectFactory : SerializableCompositeFactory 
