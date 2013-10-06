@@ -190,6 +190,23 @@ namespace OPSTest
             }
         }
 
+        private void buttonDeleteParticipant_Click(object sender, EventArgs e)
+        {
+            if (!verifyParticipants()) return;
+
+            // Release references to the participants
+            foreach (MyTopicInfo info in MyTopicInfoList)
+            {
+                info.Part = null;
+            }
+
+            myParticipant.StopAndReleaseResources();
+            OtherParticipant.StopAndReleaseResources();
+
+            myParticipant = null;
+            OtherParticipant = null;
+        }
+
         private bool verifyParticipants()
         {
             bool res = (myParticipant != null) && (OtherParticipant != null);
@@ -391,6 +408,7 @@ namespace OPSTest
                 textBoxMessages.AppendText(str);
                 if (++counter > 100) break;         // Exit to let other events have their chance
             }
+            label3.Text = "#Part. " + Participant.SafeInstanceCount.ToString();
         }
 
         public void Log(string text)
@@ -424,12 +442,20 @@ namespace OPSTest
 
         public void SubscriberNewData(Subscriber sender, PizzaData data)
         {
-            Log("[Topic: " + sender.GetTopic().GetName() + "] Pizza:: Cheese: " + data.cheese + ",  Tomato sauce: " + data.tomatoSauce);
+            OPSMessage mess = sender.GetMessage();
+            
+            Log("[Topic: " + sender.GetTopic().GetName() + "] Pizza:: Cheese: " + data.cheese + 
+                ",  Tomato sauce: " + data.tomatoSauce +
+                ", From " + mess.GetSourceIP() + ":" + mess.GetSourcePort());
         }
 
         public void SubscriberNewData(Subscriber sender, VessuvioData data)
         {
-            Log("[Topic: " + sender.GetTopic().GetName() + "] Vessuvio:: Cheese: " + data.cheese + ",  Tomato sauce: " + data.tomatoSauce + ", Ham length: " + data.ham.Length);
+            OPSMessage mess = sender.GetMessage();
+
+            Log("[Topic: " + sender.GetTopic().GetName() + "] Vessuvio:: Cheese: " + data.cheese + 
+                ",  Tomato sauce: " + data.tomatoSauce + ", Ham length: " + data.ham.Length +
+                ", From " + mess.GetSourceIP() + ":" + mess.GetSourcePort());
         }
 
         public void SubscriberNewData(Subscriber sender, Ops.ParticipantInfoData data)
@@ -624,6 +650,7 @@ namespace OPSTest
 
             buf.Write(i);
         }
+
     }
 
 
@@ -776,6 +803,11 @@ namespace OPSTest
                 }
                 myPub = new Publisher(topic);
                 myPub.SetName("This is a publisher");
+
+                string IP = "";
+                int port = 0;
+                myPub.GetLocalEndpoint(ref IP, ref port);
+                Log("[Topic: " + topic.GetName() + "] Publisher using endpoint: " + IP + "::" + port);
             }
             else
             {
@@ -886,6 +918,8 @@ namespace OPSTest
         //
         private void SubscriberNewData(Subscriber sender, OPSObject data)
         {
+            OPSMessage mess = sender.GetMessage();
+
             if (client != null) client.SubscriberNewData(sender, (T)data);
         }
     }

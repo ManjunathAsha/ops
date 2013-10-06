@@ -41,9 +41,11 @@
             this.buttonStartSubscriber = new System.Windows.Forms.Button();
             this.buttonStopSubscriber = new System.Windows.Forms.Button();
             this.groupBoxSetup = new System.Windows.Forms.GroupBox();
+            this.buttonDeleteParticipant = new System.Windows.Forms.Button();
             this.buttonDeletePublisher = new System.Windows.Forms.Button();
             this.buttonDeleteSubscriber = new System.Windows.Forms.Button();
             this.groupBoxMisc = new System.Windows.Forms.GroupBox();
+            this.button2 = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.checkBoxEnableTrace = new System.Windows.Forms.CheckBox();
             this.buttonGCCollect = new System.Windows.Forms.Button();
@@ -60,7 +62,7 @@
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.textBoxSendPeriod = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.button2 = new System.Windows.Forms.Button();
+            this.label3 = new System.Windows.Forms.Label();
             this.groupBoxSetup.SuspendLayout();
             this.groupBoxMisc.SuspendLayout();
             this.groupBoxSubscriberSettings.SuspendLayout();
@@ -169,6 +171,7 @@
             // 
             // groupBoxSetup
             // 
+            this.groupBoxSetup.Controls.Add(this.buttonDeleteParticipant);
             this.groupBoxSetup.Controls.Add(this.buttonDeletePublisher);
             this.groupBoxSetup.Controls.Add(this.buttonDeleteSubscriber);
             this.groupBoxSetup.Controls.Add(this.buttonCreateParticipant);
@@ -181,6 +184,16 @@
             this.groupBoxSetup.TabIndex = 11;
             this.groupBoxSetup.TabStop = false;
             this.groupBoxSetup.Text = "Setup Participant/Subscriber/Publisher";
+            // 
+            // buttonDeleteParticipant
+            // 
+            this.buttonDeleteParticipant.Location = new System.Drawing.Point(128, 19);
+            this.buttonDeleteParticipant.Name = "buttonDeleteParticipant";
+            this.buttonDeleteParticipant.Size = new System.Drawing.Size(106, 23);
+            this.buttonDeleteParticipant.TabIndex = 11;
+            this.buttonDeleteParticipant.Text = "Delete Participant";
+            this.buttonDeleteParticipant.UseVisualStyleBackColor = true;
+            this.buttonDeleteParticipant.Click += new System.EventHandler(this.buttonDeleteParticipant_Click);
             // 
             // buttonDeletePublisher
             // 
@@ -204,6 +217,7 @@
             // 
             // groupBoxMisc
             // 
+            this.groupBoxMisc.Controls.Add(this.label3);
             this.groupBoxMisc.Controls.Add(this.button2);
             this.groupBoxMisc.Controls.Add(this.button1);
             this.groupBoxMisc.Controls.Add(this.checkBoxEnableTrace);
@@ -216,6 +230,16 @@
             this.groupBoxMisc.TabIndex = 12;
             this.groupBoxMisc.TabStop = false;
             this.groupBoxMisc.Text = "Miscellaneous";
+            // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(118, 77);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(64, 23);
+            this.button2.TabIndex = 19;
+            this.button2.Text = "button2";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // button1
             // 
@@ -362,15 +386,14 @@
             this.label2.TabIndex = 20;
             this.label2.Text = "Send Period [ms]:";
             // 
-            // button2
+            // label3
             // 
-            this.button2.Location = new System.Drawing.Point(118, 77);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(64, 23);
-            this.button2.TabIndex = 19;
-            this.button2.Text = "button2";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.button2_Click);
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(131, 112);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(35, 13);
+            this.label3.TabIndex = 20;
+            this.label3.Text = "label3";
             // 
             // Form_TestOps
             // 
@@ -437,6 +460,8 @@
         private System.Windows.Forms.CheckBox checkBoxEnableTrace;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Button buttonDeleteParticipant;
+        private System.Windows.Forms.Label label3;
     }
 }
 
