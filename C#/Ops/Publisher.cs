@@ -41,6 +41,7 @@ namespace Ops
             // Must tell the sendDataHandler that we don't need it anymore
             Stop();
             this.sendDataHandler = null;
+            this.participant = null;
         }
 
         private void Init()
@@ -80,6 +81,16 @@ namespace Ops
                 this.sendDataHandler.RemovePublisher(this);
                 started = false;
             }
+        }
+
+        /// <summary>
+        /// Get IP and port used as endpoint when sending a message
+        /// </summary>
+        /// <param name="IP"></param>
+        /// <param name="port"></param>
+        public void GetLocalEndpoint(ref string IP, ref int port)
+        {
+            this.sendDataHandler.GetLocalEndpoint(ref IP, ref port);
         }
 
         public void CheckTypeString(string typeString)

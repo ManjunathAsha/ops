@@ -16,6 +16,8 @@ namespace Ops
         bool Receive(byte[] headerBytes, byte[] bytes, int offset);
 
         Event GetNewBytesEvent();
+
+        void GetSource(ref string IP, ref int port);
     }
 
 }

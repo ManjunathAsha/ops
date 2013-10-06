@@ -48,7 +48,18 @@ namespace Ops
             }
         }
 
-		public bool SendTo(byte[] bytes, int offset, int size, string ip, int port)
+        /// <summary>
+        /// Get IP and port used as endpoint when sending a message
+        /// </summary>
+        /// <param name="IP"></param>
+        /// <param name="port"></param>
+        public void GetLocalEndpoint(ref string IP, ref int port)
+        {
+            IP = ((IPEndPoint)this.udpSocket.Client.LocalEndPoint).Address.ToString();
+            port = ((IPEndPoint)this.udpSocket.Client.LocalEndPoint).Port;
+        }
+
+        public bool SendTo(byte[] bytes, int offset, int size, string ip, int port)
         {
             try
             {

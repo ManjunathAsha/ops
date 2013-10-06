@@ -38,6 +38,11 @@ namespace Ops
             this.receiver = receiver;
         }
 
+        ~ReceiveDataHandler()
+        {
+            this.participant = null;
+        }
+
         public int GetSampleMaxSize()
         {
             return topic.GetSampleMaxSize();
@@ -142,7 +147,7 @@ namespace Ops
 
         private void SendBytesToSubscribers(ReadByteBuffer readBuf)
         {
-            OPSArchiverIn archiverIn = new OPSArchiverIn(readBuf);
+            OPSArchiverIn archiverIn = new OPSArchiverIn(readBuf, this.participant.getObjectFactory());
             OPSMessage message = null;
 
             // If the proper typesupport has not been added, the message may have content, but some fields may be null. How do we handle this
@@ -166,6 +171,10 @@ namespace Ops
 
             CalculateAndSetSpareBytes(message, readBuf, FRAGMENT_HEADER_SIZE, bytesReceived);
 
+            string IP = "";
+            int port = 0;
+            receiver.GetSource(ref IP, ref port);
+            message.SetSource(IP, port);
 
             //TODO: error checking
             foreach (Subscriber subscriber in subscribers)

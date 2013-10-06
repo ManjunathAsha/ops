@@ -15,6 +15,13 @@ namespace Ops
         void AddPublisher(Publisher pub);
         bool RemovePublisher(Publisher pub);
 
+        /// <summary>
+        /// Get IP and port used as endpoint when sending a message
+        /// </summary>
+        /// <param name="IP"></param>
+        /// <param name="port"></param>
+        void GetLocalEndpoint(ref string IP, ref int port);
+
 		/// 
 		/// <param name="bytes"></param>
 		/// <param name="size"></param>
@@ -52,6 +59,16 @@ namespace Ops
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Get IP and port used as endpoint when sending a message
+        /// </summary>
+        /// <param name="IP"></param>
+        /// <param name="port"></param>
+        public void GetLocalEndpoint(ref string IP, ref int port)
+        {
+            sender.GetLocalEndpoint(ref IP, ref port);
         }
 
         public abstract bool SendData(byte[] bytes, int size, Topic t);

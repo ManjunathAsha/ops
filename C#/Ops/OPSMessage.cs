@@ -9,17 +9,18 @@ namespace Ops
 {
 	public class OPSMessage : OPSObject 
     {
-		private string address = "";
-		private OPSObject data;
+		private string address = "";            // Serialized
+		private OPSObject data;                 // serialized
 		private byte endianness;
-		private byte messageType;
-		private int port;
-		private long publicationID;
-		private string publisherName = "";
-		private byte publisherPriority;
+		private byte messageType;               // Serialized
+		private int sourcePort;
+        private string sourceIP;
+		private long publicationID;             // Serialized
+		private string publisherName = "";      // Serialized
+		private byte publisherPriority;         // Serialized
 		private long qosMask;
-		private string topicName = "";
-		private string topLevelKey = "";
+		private string topicName = "";          // Serialized
+		private string topLevelKey = "";        // Serialized
 
         public OPSMessage()
         {
@@ -66,14 +67,20 @@ namespace Ops
             this.messageType = messageType;
         }
 
-        public int GetPort()
+        public int GetSourcePort()
         {
-            return this.port;
+            return this.sourcePort;
         }
 
-        public void SetPort(int port)
+        public string GetSourceIP()
         {
-            this.port = port;
+            return this.sourceIP;
+        }
+
+        internal void SetSource(string IP, int port)
+        {
+            this.sourceIP = IP;
+            this.sourcePort = port;
         }
 
         public long GetPublicationID()

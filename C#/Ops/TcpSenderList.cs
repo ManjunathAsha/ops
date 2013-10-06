@@ -52,6 +52,18 @@ namespace Ops
             senders.Add(e);
         }
 
+        /// <summary>
+        /// Get IP and port used as endpoint when sending a message
+        /// </summary>
+        /// <param name="IP"></param>
+        /// <param name="port"></param>
+        public void GetLocalEndpoint(ref string IP, ref int port)
+        {
+            ///Not used
+            IP = "";
+            port = 0;
+        }
+
         // Synchronization is unnecessary since the code only calls a synchronized method
         public bool SendTo(byte[] bytes, string ip, int port)
         {

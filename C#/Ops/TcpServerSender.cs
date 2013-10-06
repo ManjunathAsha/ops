@@ -59,6 +59,17 @@ namespace Ops
             }
         }
 
+        /// <summary>
+        /// Get IP and port used as endpoint when sending a message
+        /// </summary>
+        /// <param name="IP"></param>
+        /// <param name="port"></param>
+        public void GetLocalEndpoint(ref string IP, ref int port)
+        {
+            IP = this.serverIp;
+            port = this.serverPort;
+        }
+
         public bool SendTo(byte[] bytes, string ip, int port)
         {
             return SendTo(bytes, 0, bytes.Length, ip, port);

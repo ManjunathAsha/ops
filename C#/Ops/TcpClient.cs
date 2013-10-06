@@ -40,6 +40,18 @@ namespace Ops
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Gets the ip and port of the message sender.
+        /// Only valid during the newBytesEvent callback.
+        /// </summary>
+        /// <param name="IP"></param>
+        /// <param name="port"></param>
+        public void GetSource(ref string IP, ref int port)
+        {
+            IP = this.serverIp;
+            port = this.serverPort;
+        }
+
         public bool Receive(byte[] headerBytes, byte[] bytes, int offset)
         {
             try
