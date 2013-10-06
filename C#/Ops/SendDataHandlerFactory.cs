@@ -19,6 +19,13 @@ namespace Ops
         private ParticipantInfoDataListener partInfoListener = null;
         private Subscriber partInfoSub = null;
 
+        ~SendDataHandlerFactory()
+        {
+            if (partInfoSub != null) partInfoSub.Stop();
+            partInfoSub = null;
+            partInfoListener = null;
+        }
+
         ///LA TODO Protection ?? What if several subscribers at the same time
         /// Not needed since all calls go through the participant which is synched
         public ISendDataHandler GetSendDataHandler(Topic t, Participant participant)

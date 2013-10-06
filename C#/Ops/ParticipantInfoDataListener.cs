@@ -22,6 +22,11 @@ namespace Ops
             this.udpSendDataHandler = sendDataHandler;
 		}
 
+        ~ParticipantInfoDataListener()
+        {
+            this.participant = null;
+        }
+
         public void SubscriberNewData(Subscriber sender, OPSObject data)
         {
             if (!(data is ParticipantInfoData)) return;

@@ -70,7 +70,23 @@ namespace Ops
                 }
             }
             return instances[hashKey];
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="domainID"></param>
+        /// <param name="participantID"></param>
+        internal void RemoveParticipant(string domainID, string participantID)
+        {
+            string hashKey = domainID + " " + participantID;
+
+            if (instances.ContainsKey(hashKey))
+            {
+                instances[hashKey] = null;
+                instances.Remove(hashKey);
             }
+        }
 
 	}
 

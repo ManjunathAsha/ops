@@ -27,7 +27,7 @@ namespace Ops
 		private OPSMessage message;
 		private MessageFilterSet messageFilters = new MessageFilterSet();
 		private readonly object newDataEvent = new object();
-		protected Participant participant;
+		protected Participant participant = null;
 		private ReceiveDataHandler receiveDataHandler = null;
 		private long sampleTime1;  
         private long sampleTime2;  
@@ -47,6 +47,13 @@ namespace Ops
             this.participant = Participant.GetInstance(topic.GetDomainID(), topic.GetParticipantID());
             deadlineNotifier = DeadlineNotifier.GetInstance();
             inProcessTransport = participant.GetInProcessTransport();
+        }
+
+        ~Subscriber()
+        {
+            // Must tell the receiveDataHandler that we don't need it anymore
+            Stop();
+            this.participant = null;
         }
 
         public void CheckTypeString(string typeString)

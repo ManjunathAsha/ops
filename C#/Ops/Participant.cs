@@ -25,9 +25,22 @@ namespace Ops
 		private ReceiveDataHandlerFactory receiveDataHandlerFactory = new ReceiveDataHandlerFactory();
 		private SendDataHandlerFactory sendDataHandlerFactory = new SendDataHandlerFactory();
 
+        ///The data type factory used in this Participant. 
+        private OPSObjectFactory objectFactory = new OPSObjectFactory();
+
         private ParticipantInfoData partInfoData = new ParticipantInfoData();
         private Publisher partInfoPub = null;
-        
+
+        private Thread thread = null;
+        private bool doRun = true;
+
+        private static int safeInstanceCount = 0;
+
+        static public int SafeInstanceCount
+        {
+            get { return safeInstanceCount; }
+        }
+
         /**
          * Method for retreiving the default Participant instance for the @param domainID
          * @param domainID
@@ -75,6 +88,7 @@ namespace Ops
 
         public Participant(string domainID, string participantID, string configFile)
         {
+            Interlocked.Increment(ref safeInstanceCount);  ///TEST
             this.domainID = domainID;
             this.participantID = participantID;
             try
@@ -113,6 +127,7 @@ namespace Ops
 
         public Participant(Domain domain, string participantID)
         {
+            Interlocked.Increment(ref safeInstanceCount);  ///TEST
             this.domainID = domain.GetDomainID();
             this.participantID = participantID;
             
@@ -120,6 +135,29 @@ namespace Ops
 
             this.inProcessTransport.Start();
             SetupCyclicThread();
+        }
+
+        ~Participant()
+        {
+            Interlocked.Decrement(ref safeInstanceCount);   ///TEST
+        }
+
+        /// <summary>
+        /// Method used to Stop the participant and remove it from the participant factory.
+        /// The participant object will be deleted when no one have references to it.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void StopAndReleaseResources()
+        {
+            // Stop the cyclic thread
+            if (this.doRun)
+            {
+                this.doRun = false;
+                this.thread.Join(3000); // Timeout just for safety
+            }
+            // Remove us from the singleton factory
+            participantFactory.RemoveParticipant(this.domainID, this.participantID);
+            sendDataHandlerFactory = null;
         }
 
         // Initialize static data in partInfoData
@@ -160,7 +198,13 @@ namespace Ops
          */
         public void AddTypeSupport(ISerializableFactory typeSupport)
         {
-            OPSObjectFactory.GetInstance().Add(typeSupport);
+            this.objectFactory.Add(typeSupport);
+        }
+
+        ///Get a pointer to the data type factory used in this Participant. 
+        public OPSObjectFactory getObjectFactory()
+        {
+            return this.objectFactory;
         }
 
         /**
@@ -256,7 +300,7 @@ namespace Ops
         {
             InitPartInfoData();
 
-            while (true)
+            while (this.doRun)
             {
                 Thread.Sleep(1000);
 
@@ -275,11 +319,14 @@ namespace Ops
                     }
                 }
             }
+
+            partInfoPub.Stop();
+            partInfoPub = null;
         }
 
         private void SetupCyclicThread()
         {
-            Thread thread = new Thread(new ThreadStart(Run));
+            thread = new Thread(new ThreadStart(Run));
             thread.IsBackground = true;
             thread.Name = "ParticipantThread_" + domainID + "_" + participantID;
             thread.Start();
