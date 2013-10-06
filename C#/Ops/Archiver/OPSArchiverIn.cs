@@ -24,6 +24,17 @@ namespace Ops
             readBuf = buf;
 		}
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="buf"></param>
+        /// <param name="factory"></param>
+        public OPSArchiverIn(ReadByteBuffer buf, OPSObjectFactory factory)
+        {
+            compositeFactory = factory;
+            readBuf = buf;
+        }
+
         public bool IsOut()
         {
             return false;
@@ -105,10 +116,13 @@ namespace Ops
         /// <param name="v"></param>
         public ISerializable Inout(string name, ISerializable v)
         {
-            string type = readBuf.ReadString();
-            ISerializable newSer = compositeFactory.Create(type);
+            string types = readBuf.ReadString();
+            ISerializable newSer = compositeFactory.Create(types);
             if (newSer != null)
             {
+                //Do this to preserve type information even if slicing has occured.
+                (newSer as OPSObject).SetTypesString(types);
+
                 newSer.Serialize(this);
             }
             return newSer;

@@ -78,6 +78,14 @@ namespace Ops
     {
 		internal static OPSObjectFactory instance = null;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public OPSObjectFactory()
+        {
+            Add(new OPSSerializableFactory());
+        }
+
 		/// <summary>
 		/// Tries to construct the most specialized version of the given typeString
 		/// </summary>
@@ -104,7 +112,6 @@ namespace Ops
             if (instance == null)
             {
                 instance = new OPSObjectFactory();
-                instance.Add(new OPSSerializableFactory()); 
             }
             return instance;
 		}

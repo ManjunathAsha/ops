@@ -72,7 +72,12 @@ namespace Ops
             return this.typesString;
         }
 
-		/// 
+        internal void SetTypesString(string ts)
+        {
+            this.typesString = ts;
+        }
+
+        /// 
 		/// <param name="archive"></param>
         virtual public void Serialize(IArchiverInOut archive)  
         {
