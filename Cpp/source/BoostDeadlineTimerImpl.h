@@ -23,87 +23,108 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/shared_ptr.hpp>
+
 #include "Participant.h"
 #include "BoostIOServiceImpl.h"
-#include "Compatibility.h"
 
 namespace ops
 {
-	class BoostDeadlineTimerImpl : public DeadlineTimer
+
+	class BoostDeadlineTimerImpl : public DeadlineTimer, Listener<int>
+	{
+    private:
+
+        // Actual implementation is deferred to an inner class to be able to use a shared_ptr
+        // without exposing the shared_ptr to the outside (to be backward compatible). 
+        // The shared_ptr is a convenient way to handle the asynch callbacks that may come 
+        // after our destructor has been called. When we start an asynch operation in the 
+        // inner class, we give boost a shared_ptr to the instance so that the last one
+        // of our destructor and the asynch callback will perform the actual delete of the
+        // inner class instance.
+        class impl;
+        boost::shared_ptr<impl> pimpl_;
+
+        // Listens on events from the inner class and forwards them to our user(s).
+		void onNewEvent(Notifier<int>* sender, int message);
+
+    public:
+        BoostDeadlineTimerImpl(boost::asio::io_service* boostIOService);
+        ~BoostDeadlineTimerImpl();
+
+		void start(__int64 timeoutMs);
+		void cancel();
+    };
+
+    // -------------------------------------------
+
+    class BoostDeadlineTimerImpl::impl : public Notifier<int>, public boost::enable_shared_from_this< BoostDeadlineTimerImpl::impl >
 	{
 		boost::asio::deadline_timer deadlineTimer;
-		// Counter to keep track of our outstanding requests, that will result in callbacks to us
-		volatile long m_reqCounter;
-		Lockable m_lock;
 	public:
-		BoostDeadlineTimerImpl(boost::asio::io_service* boostIOService) 
-			: m_reqCounter(0),
-			deadlineTimer(*boostIOService)
+        impl(boost::asio::io_service* boostIOService) : deadlineTimer(*boostIOService)
 		{
 		}
-		virtual void start(__int64 timeout) 
+
+		virtual void start(__int64 timeoutMs) 
 		{
-			//	if(deadlineTimer.expires_from_now(boost::posix_time::milliseconds(timeout)) > 0)
-			//	{
-			//		//Timer was canceled
-			//		std::cout << "cancelling " << timeout << std::endl;
-			//		deadlineTimer.async_wait(boost::bind(&BoostDeadlineTimerImpl::asynchHandleDeadlineTimeout, this, boost::asio::placeholders::error));
-			//		isStarted = true;
-			//	}
-			//	else
-			//	{
-			//std::cout << "expired" << std::endl;
 			deadlineTimer.cancel();
-		    {
-				SafeLock lock(&m_lock);
-				m_reqCounter++;
-			}
-			deadlineTimer.expires_from_now(boost::posix_time::milliseconds(timeout));
-			deadlineTimer.async_wait(boost::bind(&BoostDeadlineTimerImpl::asynchHandleDeadlineTimeout, this, boost::asio::placeholders::error));
-			/*
-			}/*
-			/*if(!isStarted)
-			{
-			deadlineTimer.
-			deadlineTimer.async_wait(boost::bind(&BoostDeadlineTimerImpl::asynchHandleDeadlineTimeout, this, boost::asio::placeholders::error));
-			isStarted = true;
-			}*/
+			deadlineTimer.expires_from_now(boost::posix_time::milliseconds(timeoutMs));
+            // Here we pass in a shared_ptr to our instance
+			deadlineTimer.async_wait(boost::bind(&impl::asynchHandleDeadlineTimeout, shared_from_this(), boost::asio::placeholders::error));
 		}
+
 		virtual void cancel()
 		{
 			deadlineTimer.cancel();
 		}
+
 		void asynchHandleDeadlineTimeout(const boost::system::error_code& e)
 		{
-			if (e != boost::asio::error::operation_aborted)
-			{
+			if (e != boost::asio::error::operation_aborted)	{
 				// Timer was not cancelled, take necessary action.
 				notifyNewEvent(0);
-			}
-			// We decrement the counter as the last thing in the callback, so we don't access the object any more 
-			// in case the destructor is called and waiting for us to be finished.
-		    {
-				SafeLock lock(&m_lock);
-				m_reqCounter--;
-			}
+            }
 		}
-		~BoostDeadlineTimerImpl()
+
+		~impl()
 		{
 			cancel();
-
-			/// We must handle asynchronous callbacks that haven't finished yet.
-			/// This approach works, but the recommended boost way is to use a shared pointer to the instance object
-			/// between the "normal" code and the callbacks, so the callbacks can check if the object exists.
-			while (m_reqCounter) {
-				cancel();
-				Sleep(1);
-			}
-			/// Take the lock as the last thing. This ensures that the lock is properly released
-			/// in the callback so we finally can let the object be deleted.
-			m_lock.lock();
-			m_lock.unlock();	// Must also release it to not get errors from boost when deleting
 		}
 	};
+
+    // -------------------------------------------
+
+    BoostDeadlineTimerImpl::BoostDeadlineTimerImpl(boost::asio::io_service* boostIOService): 
+        pimpl_(new impl(boostIOService))
+    {
+        pimpl_->addListener(this);
+    }
+
+    BoostDeadlineTimerImpl::~BoostDeadlineTimerImpl()
+    {
+        cancel();
+        // The removeListener() and the calling of our callback "onNewEvent()" are protected so when
+        // we return from removeListener() we know that there can't be anyone in the callback.
+        pimpl_->removeListener(this);
+    }
+
+    void BoostDeadlineTimerImpl::onNewEvent(Notifier<int>* sender, int message)
+    {
+        notifyNewEvent(message);    // Just forward the event
+    }
+
+    void BoostDeadlineTimerImpl::start(__int64 timeout)
+    {
+        pimpl_->start(timeout);
+    }
+
+    void BoostDeadlineTimerImpl::cancel()
+    {
+        pimpl_->cancel();
+    }
+
 }
 
 #endif

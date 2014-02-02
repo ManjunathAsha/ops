@@ -22,7 +22,6 @@
 #define ops_NotifierH
 #include <vector>
 #include "Listener.h"
-//#include <boost/thread/mutex.hpp>
 #include "Lockable.h"
 
 namespace ops
@@ -38,38 +37,33 @@ namespace ops
         ///Vector that holds pointers to the Listeners
         std::vector<Listener<ArgType>*> listeners;
 
-        //boost::mutex mutex;
+        //
         Lockable mutex;
 
     protected:
         ///Called by subclasses that wishes to notify its listeners of the arrival of new events.
-
         virtual void notifyNewEvent(ArgType arg)
         {
-            //boost::mutex::scoped_lock lock(mutex);
+            // Methods addListener(), removeListener() and calling of registered callback need to be protected.
+            // This also ensures that when a client returns from removeListener(), he can't be called
+            // anymore and there can't be an ongoing call in his callback.
             SafeLock lock(&mutex);
-            //mutex.lock();
             for (unsigned int i = 0; i < listeners.size(); i++)
             {
                 listeners[i]->onNewEvent(this, arg);
             }
-            //mutex.unlock();
         }
     public:
 
-
         ///Register a Listener
-
         virtual void addListener(Listener<ArgType>* listener)
         {
-            //boost::mutex::scoped_lock lock(mutex);
             SafeLock lock(&mutex);
             listeners.push_back(listener);
         }
 
         virtual void removeListener(Listener<ArgType>* listener)
         {
-            //boost::mutex::scoped_lock lock(mutex);
             SafeLock lock(&mutex);
             for (unsigned int i = 0; i < listeners.size(); i++)
             {
@@ -88,11 +82,9 @@ namespace ops
         {
             SafeLock lock(&mutex);
             return listeners.size();
-
         }
 
         //Destructor:
-
         virtual ~Notifier()
         {
             SafeLock lock(&mutex);

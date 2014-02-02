@@ -27,7 +27,7 @@ namespace ops
 	class DeadlineTimer : public Notifier<int>
 	{
 	public:
-		virtual void start(__int64 timeout) = 0;
+		virtual void start(__int64 timeoutMs) = 0;
 		virtual void cancel() = 0;
 		virtual ~DeadlineTimer(){};
 
