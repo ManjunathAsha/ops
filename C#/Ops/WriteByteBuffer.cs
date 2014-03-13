@@ -105,7 +105,7 @@ namespace Ops
                 nextSegmentAt = (int)bw.BaseStream.Position + segmentSize;
                 WriteNewSegment();
                 currentSegment++;
-                Write(bytes, bytesLeftInSegment, length - bytesLeftInSegment);
+                Write(bytes, start + bytesLeftInSegment, length - bytesLeftInSegment);
             }
 		}
 

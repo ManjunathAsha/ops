@@ -13,7 +13,7 @@ namespace Ops
 	public class Publisher 
     {
 		private byte [] bytes;
-		private int currentPublicationID = 1;
+		private long currentPublicationID = 0;
 		private InProcessTransport inProcessTransport;
 		private string key = "";
 		private string name = "";
@@ -161,13 +161,13 @@ namespace Ops
 
         private void IncCurrentPublicationID()
         {
-            if (this.currentPublicationID < 10000)
+            if (this.currentPublicationID < long.MaxValue)
             {
                 this.currentPublicationID++;
             }
             else
             {
-                this.currentPublicationID = 1;
+                this.currentPublicationID = 0;
             }
         }
 
@@ -196,7 +196,7 @@ namespace Ops
             this.key = key;
         }
 
-        public int GetCurrentPublicationID()
+        public long GetCurrentPublicationID()
         {
             return this.currentPublicationID;
         }

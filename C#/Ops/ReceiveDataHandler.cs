@@ -191,14 +191,15 @@ namespace Ops
 
         private void CalculateAndSetSpareBytes(OPSMessage message, ReadByteBuffer readBuf, int segmentPaddingSize, int bytesReceived)
         {
-            // We must calculate how many unserialized segment headers we have and substract 
-            // that total header size from the size of spareBytes.
-            int nrOfSerializedBytes = readBuf.Position();
-            int totalNrOfSegments = (int) (bytesReceived /fragmentSize);
-            int nrOfSerializedSegements = (int) (nrOfSerializedBytes /fragmentSize);
-            int nrOfUnserializedSegments = totalNrOfSegments - nrOfSerializedSegements;
+            //NOT needed since 'bytesReceived' already is compensated for all headers and 'readBuf' is all data except header data
+            //// We must calculate how many unserialized segment headers we have and substract 
+            //// that total header size from the size of spareBytes.
+            //int nrOfSerializedBytes = readBuf.Position();
+            //int totalNrOfSegments = (int) (bytesReceived /fragmentSize);
+            //int nrOfSerializedSegements = (int) (nrOfSerializedBytes /fragmentSize);
+            //int nrOfUnserializedSegments = totalNrOfSegments - nrOfSerializedSegements;
 
-            int nrOfSpareBytes = bytesReceived - readBuf.Position() - (nrOfUnserializedSegments * segmentPaddingSize);
+            int nrOfSpareBytes = bytesReceived - readBuf.Position(); ///See comment above: -(nrOfUnserializedSegments * segmentPaddingSize);
 
             if (nrOfSpareBytes > 0)
             {

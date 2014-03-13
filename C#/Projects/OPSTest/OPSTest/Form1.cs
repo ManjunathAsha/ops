@@ -317,6 +317,34 @@ namespace OPSTest
                 {
                     Pizza[idx2].Data.cheese = "From C# " + Convert.ToString(myMessageCounter);
                     Pizza[idx2].Data.tomatoSauce = "tomatosauce " + Convert.ToString(myMessageCounter);
+                    // Setup spareBytes test
+                    int numBytes = 0;
+                    int.TryParse(textBoxNumBytes.Text, out numBytes);
+                    if (numBytes > 0)
+                    {
+                        Pizza[idx2].Data.spareBytes = new byte[numBytes];
+                        byte b = 0;
+                        for (int i = 0; i < numBytes; i++)
+                        {
+                            Pizza[idx2].Data.spareBytes[i] = b;
+                            if (b < 255)
+                            {
+                                b++;
+                            }
+                            else
+                            {
+                                b = 0;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (Pizza[idx2].Data.spareBytes.Length > 0)
+                        {
+                            Pizza[idx2].Data.spareBytes = new byte[0];
+                        }
+                    }
+                    //
                     Pizza[idx2].Write();
                 }
                 else
@@ -444,9 +472,29 @@ namespace OPSTest
         {
             OPSMessage mess = sender.GetMessage();
             
-            Log("[Topic: " + sender.GetTopic().GetName() + "] Pizza:: Cheese: " + data.cheese + 
-                ",  Tomato sauce: " + data.tomatoSauce +
+            Log("[Topic: " + sender.GetTopic().GetName() + "] Pizza:: Cheese: " + data.cheese +
+                ",  Tomato sauce: " + data.tomatoSauce + ", SpareBytes: " + data.spareBytes.Length +
                 ", From " + mess.GetSourceIP() + ":" + mess.GetSourcePort());
+
+            byte b = 0;
+            int numBytes = data.spareBytes.Length;
+            for (int i = 0; i < numBytes; i++)
+            {
+                if (data.spareBytes[i] != b)
+                {
+                    Log("######### spareBytes error");
+                    break;
+                }
+                if (b < 255)
+                {
+                    b++;
+                }
+                else
+                {
+                    b = 0;
+                }
+            }
+
         }
 
         public void SubscriberNewData(Subscriber sender, VessuvioData data)
